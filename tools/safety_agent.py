@@ -9,8 +9,8 @@ sys.path.append(project_root)
 # Import the FractFlow ToolTemplate
 from FractFlow.tool_template import ToolTemplate
 
-class VQATool(ToolTemplate):
-    """Visual Question Answering tool using ToolTemplate"""
+class Safety_VLM(ToolTemplate):
+    """Landing Safety Checking Tool"""
     
     SYSTEM_PROMPT = """
 你是一个专业的视觉问答助手，通过Qwen-VL-Plus模型分析图像并基于用户提示提供详细回答。
@@ -47,18 +47,18 @@ Visual_Question_Answering - 处理图像并回答关于其内容的问题。接�
 """
     
     TOOLS = [
-        ("tools/core/visual_question_answer/vqa_mcp.py", "visual_question_answering_operations")
+        ("tools/safety_vlm", "landing_safety_check_operations")
     ]
     
-    MCP_SERVER_NAME = "visual_question_answering_tool"
+    MCP_SERVER_NAME = "landing_safety_checker"
     
-    TOOL_DESCRIPTION = """Answers questions about visual content by analyzing images.
+    TOOL_DESCRIPTION = """ Check if the marked landing spot in the image is save.
     
     Parameters:
-        query: str - Include image path and specific question (e.g., "Image: /path/photo.jpg What color is the car?")
+        query: image - The path of the marked image to be checked, (e.g., "Image: /path/photo.")
         
     Returns:
-        str - Visual analysis result or error message
+        str - The safety level (Green, Yellow, Red) of the designated landing spot and its reasoning.
         
     Note: Requires accessible image files, automatically resized to 512x512.
     """
