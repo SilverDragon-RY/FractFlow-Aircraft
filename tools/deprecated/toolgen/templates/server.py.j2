@@ -1,0 +1,30 @@
+"""
+{{ tool_name }} Tool Server
+
+This module provides direct MCP tool implementations for the {{ tool_name }} tool.
+These functions are designed to be exposed as MCP tools and used by the AI server.
+"""
+
+# Standard library imports
+import os
+import sys
+from typing import Dict, Any, List, Optional
+
+# MCP framework imports
+from mcp.server.fastmcp import FastMCP
+
+# Add current directory to Python path for local imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# Source-specific imports (generated based on source code analysis)
+{{ source_imports }}
+
+# Initialize FastMCP server
+mcp = FastMCP("{{ tool_name_snake }}")
+
+{{ tool_definitions }}
+
+if __name__ == "__main__":
+    mcp.run(transport='stdio') 

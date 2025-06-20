@@ -1,0 +1,17 @@
+# Requirements for the websearch tool
+# Core dependencies
+requests>=2.25.0
+httpx>=0.23.0
+beautifulsoup4>=4.9.3
+chardet>=4.0.0
+mcp>=0.1.0
+PyPDF2>=3.0.0  # PDF文件处理库
+
+# Search engine dependencies
+googlesearch-python>=1.1.0
+duckduckgo-search>=2.9.5
+baidusearch>=0.5.0
+
+# Testing dependencies
+pytest>=6.2.5
+pytest-asyncio>=0.15.1

@@ -1,0 +1,55 @@
+"""
+单元测试 - {{ tool_name }}
+
+这个模块包含对{{ tool_name_snake }}模块核心功能的单元测试。
+"""
+
+import os
+import sys
+import unittest
+from unittest.mock import patch, MagicMock
+
+# 添加src目录到Python路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+src_dir = os.path.abspath(os.path.join(current_dir, '../src'))
+sys.path.append(src_dir)
+
+# 导入要测试的模块
+from {{ tool_name_snake }}_operations import example_operation
+
+
+class Test{{ tool_name_pascal }}(unittest.TestCase):
+    """{{ tool_name }}单元测试类"""
+    
+    def setUp(self):
+        """测试前的准备工作"""
+        # 在这里添加测试准备代码
+        pass
+    
+    def tearDown(self):
+        """测试后的清理工作"""
+        # 在这里添加测试清理代码
+        pass
+    
+    def test_example_operation(self):
+        """测试example_operation函数"""
+        # 测试示例函数
+        result = example_operation("test")
+        self.assertTrue(result["success"])
+        self.assertIn("test", result["message"])
+        
+        # 使用自定义参数测试
+        result = example_operation("custom", 42)
+        self.assertTrue(result["success"])
+        self.assertIn("custom", result["message"])
+        self.assertIn("42", result["message"])
+
+    # TODO: 为您实现的功能添加更多测试方法
+    # def test_your_function(self):
+    #     """测试您的自定义函数"""
+    #     # 这里添加测试代码
+    #     pass
+
+
+if __name__ == '__main__':
+    unittest.main() 

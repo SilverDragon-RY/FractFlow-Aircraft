@@ -1,0 +1,13 @@
+1: LLM improve prompt quality + generate important queries
+NVILA
+
+2: SD generate result.
+
+LOOP
+ - LLM queries -> generate thinsg to detect -> generate prompt for inpainter
+ - inpainter edit image
+ - SD generater step (to make consistent)
+until satisfied
+
+components:
+LLM, generator, inpainter

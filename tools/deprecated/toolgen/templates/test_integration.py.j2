@@ -1,0 +1,139 @@
+"""
+集成测试 - {{ tool_name }}
+
+这个模块包含对{{ tool_name }}工具的系统级集成测试。
+通过subprocess调用实际的run_server.py进行测试，验证系统在实际环境中的表现。
+"""
+
+import os
+import sys
+import unittest
+import subprocess
+import json
+import time
+import tempfile
+from unittest.mock import patch, MagicMock
+import asyncio
+
+# 添加项目根目录到Python路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '..'))
+sys.path.append(project_root)
+
+
+class Test{{ tool_name_pascal }}Integration(unittest.TestCase):
+    """{{ tool_name }}集成测试类"""
+    
+    @classmethod
+    def setUpClass(cls):
+        """测试类启动前的准备工作"""
+        cls.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        cls.run_server_path = os.path.join(cls.root_dir, 'run_server.py')
+        
+        # 检查run_server.py是否存在
+        if not os.path.exists(cls.run_server_path):
+            raise FileNotFoundError(f"找不到运行脚本: {cls.run_server_path}")
+    
+    def setUp(self):
+        """每个测试方法前的准备工作"""
+        # 在这里添加测试准备代码
+        pass
+    
+    def tearDown(self):
+        """每个测试方法后的清理工作"""
+        # 确保所有子进程已终止
+        pass
+
+    def _run_server_query(self, query, use_ai_server=False):
+        """
+        运行服务器并执行查询
+        
+        Args:
+            query: 要执行的查询
+            use_ai_server: 是否使用AI增强服务器
+            
+        Returns:
+            subprocess.CompletedProcess对象
+        """
+        cmd = [sys.executable, self.run_server_path, '--user_query', query]
+        if use_ai_server:
+            cmd.append('--AI_server')
+        
+        # 运行命令，捕获输出
+        try:
+            result = subprocess.run(
+                cmd, 
+                capture_output=True, 
+                text=True, 
+                check=False,
+                timeout=60  # 设置超时时间，避免测试挂起
+            )
+            return result
+        except subprocess.TimeoutExpired:
+            self.fail("查询执行超时")
+
+    def test_basic_functionality(self):
+        """测试基本功能是否正常工作"""
+        # 使用直接MCP工具模式进行测试
+        test_query = "测试基本功能"
+        result = self._run_server_query(test_query)
+        
+        # 检查进程是否正常退出
+        self.assertEqual(result.returncode, 0, f"进程异常退出，错误信息: {result.stderr}")
+        
+        # 检查输出是否符合预期
+        self.assertIn("Processing query:", result.stdout)
+        # 添加更多针对您工具特定输出的检查
+    
+    @unittest.skip("AI服务器测试可能需要API密钥，默认跳过")
+    def test_ai_server_functionality(self):
+        """测试AI增强服务器是否正常工作"""
+        # 使用AI增强模式进行测试
+        test_query = "测试AI功能"
+        result = self._run_server_query(test_query, use_ai_server=True)
+        
+        # 检查进程是否正常退出
+        self.assertEqual(result.returncode, 0, f"进程异常退出，错误信息: {result.stderr}")
+        
+        # 检查输出是否符合预期
+        self.assertIn("Processing query:", result.stdout)
+        # 添加更多针对AI服务器特定输出的检查
+    
+    def test_error_handling(self):
+        """测试错误处理能力"""
+        # 发送一个预期会导致错误的查询
+        test_query = "故意触发错误的测试查询"
+        result = self._run_server_query(test_query)
+        
+        # 这里我们不一定期望进程返回错误码，因为工具可能会捕获异常并返回错误消息
+        # 检查输出中是否包含错误信息
+        self.assertIn("Processing query:", result.stdout)
+        
+        # 可以添加更多针对错误处理的断言，取决于工具特性
+    
+    def test_with_temp_file(self):
+        """测试涉及临时文件的功能"""
+        # 创建一个临时文件用于测试
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp:
+            temp_path = temp.name
+            temp.write("这是测试内容\n第二行内容")
+        
+        try:
+            # 构建引用临时文件的查询
+            test_query = f"处理文件 {temp_path}"
+            result = self._run_server_query(test_query)
+            
+            # 检查进程是否正常退出
+            self.assertEqual(result.returncode, 0, f"进程异常退出，错误信息: {result.stderr}")
+            
+            # 添加更多针对文件处理功能的断言
+        finally:
+            # 清理临时文件
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+    
+    # TODO: 根据工具的实际功能添加更多测试用例
+
+
+if __name__ == '__main__':
+    unittest.main() 

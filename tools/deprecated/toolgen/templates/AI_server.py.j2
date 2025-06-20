@@ -1,0 +1,82 @@
+"""
+AI-Enhanced {{ tool_name }} Server
+
+This module provides a high-level, natural language interface to {{ tool_name_snake }} operations
+by wrapping the low-level MCP tools with a FractFlow Agent. The agent interprets
+user requests and selects the appropriate operations to execute.
+"""
+
+import asyncio
+import os
+import sys
+import logging
+import argparse
+from dotenv import load_dotenv
+from mcp.server.fastmcp import FastMCP
+import os.path as osp
+
+# Import the FractFlow Agent
+from FractFlow.agent import Agent
+from FractFlow.infra.config import ConfigManager
+from FractFlow.infra.logging_utils import setup_logging, get_logger
+
+# Setup logging
+setup_logging(level=logging.INFO)
+
+# Initialize FastMCP server
+mcp = FastMCP("{{ tool_name_snake }}_tool")
+
+# System prompt for the agent
+SYSTEM_PROMPT = """
+{{ system_prompt }}
+"""
+
+async def create_agent():
+    """Create and initialize the Agent"""
+    load_dotenv()
+    # Create a new agent
+    agent = Agent('{{ tool_name_snake }}_assistant')
+    
+    # Configure the agent
+    config = agent.get_config()
+    config['deepseek']['api_key'] = os.getenv('DEEPSEEK_API_KEY')
+    config['agent']['provider'] = 'deepseek'
+    config['deepseek']['model'] = 'deepseek-chat'
+    config['agent']['max_iterations'] = 5
+    config['agent']['custom_system_prompt'] = SYSTEM_PROMPT
+    config['tool_calling']['version'] = 'turbo'
+    
+    # Apply configuration
+    agent.set_config(config)
+    
+    # Add tools to the agent
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    server_path = os.path.join(current_dir, "server.py")
+    
+    agent.add_tool(server_path, "{{ tool_name_snake }}_operations")
+    
+    # Initialize the agent
+    print("Initializing agent...")
+    await agent.initialize()
+    
+    return agent
+
+@mcp.tool()
+async def {{ tool_name_snake }}_tool(query: str) -> str:
+    """
+    {{ tool_docstring }}
+    """
+    # Create and initialize the agent
+    agent = await create_agent()
+    
+    try:
+        # Process the query with the agent
+        result = await agent.process_query(query)
+        return result
+    finally:
+        # Ensure the agent is properly shut down
+        await agent.shutdown()
+
+if __name__ == "__main__":
+    # Run the MCP server
+    mcp.run(transport='stdio') 

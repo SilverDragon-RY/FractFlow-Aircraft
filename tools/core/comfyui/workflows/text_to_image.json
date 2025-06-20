@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "name": "text_to_image",
+    "description": "基于文本提示生成高质量图像",
+    "use_when": [
+      "用户只提供文字描述想生成图片",
+      "需要创作全新的图像内容",
+      "没有参考图片的原创内容生成"
+    ],
+    "input_nodes": {
+      "positive_prompt": {
+        "node_id": "6",
+        "field": "inputs.text",
+        "type": "string",
+        "description": "正面提示词，描述想要生成的内容 (需要英文）",
+        "required": true
+      },
+      "negative_prompt": {
+        "node_id": "7",
+        "field": "inputs.text",
+        "type": "string",
+        "description": "负面提示词，描述不想要的内容 (需要英文）",
+        "default": "bad hands, bad quality, blurry"
+      },
+      "seed": {
+        "node_id": "3",
+        "field": "inputs.seed",
+        "type": "integer",
+        "description": "随机种子，0为随机生成"
+      }
+    },
+    "output_nodes": {
+      "generated_image": {
+        "node_id": "9",
+        "type": "images",
+        "description": "生成的主要图像文件"
+      }
+    }
+  },
+  "workflow": {
+    "3": {
+      "class_type": "KSampler",
+      "inputs": {
+        "cfg": 1.0,
+        "denoise": 1,
+        "latent_image": [
+          "5",
+          0
+        ],
+        "model": [
+          "4",
+          0
+        ],
+        "negative": [
+          "7",
+          0
+        ],
+        "positive": [
+          "6",
+          0
+        ],
+        "sampler_name": "euler",
+        "scheduler": "normal",
+        "seed": 0,
+        "steps": 1
+      }
+    },
+    "4": {
+      "class_type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "SDXL-TURBO/sd_xl_turbo_1.0_fp16.safetensors"
+      }
+    },
+    "5": {
+      "class_type": "EmptyLatentImage",
+      "inputs": {
+        "batch_size": 1,
+        "height": 512,
+        "width": 512
+      }
+    },
+    "6": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "clip": [
+          "4",
+          1
+        ],
+        "text": "masterpiece best quality"
+      }
+    },
+    "7": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "clip": [
+          "4",
+          1
+        ],
+        "text": "bad hands, bad quality, blurry"
+      }
+    },
+    "8": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "3",
+          0
+        ],
+        "vae": [
+          "4",
+          2
+        ]
+      }
+    },
+    "9": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "filename_prefix": "ComfyUI",
+        "images": [
+          "8",
+          0
+        ]
+      }
+    }
+  }
+} 

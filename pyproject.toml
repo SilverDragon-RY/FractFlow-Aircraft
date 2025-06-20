@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "FractFlow"
+version = "0.1.0"
+description = "FractFlow: A fractal intelligence architecture for building dynamic, self-organizing distributed cognitive systems through recursive Agent-Tool combinations"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Yingcong Chen" }
+]
+keywords = ["ai", "agent", "llm", "tools", "fractal", "intelligence", "mcp", "distributed", "cognitive"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+dependencies = [
+    "python-dotenv>=1.1.0",
+    "requests>=2.32.0",
+    "asyncio",
+    "openai>=1.80.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "pydantic>=2.11.0",
+    "typing-extensions>=4.12.0",
+    "httpx>=0.28.0",
+    "httpx-sse>=0.4.0",
+    "websockets>=13.0",
+    "tenacity>=9.0.0",
+    "jinja2>=3.1.0",
+    "orjson>=3.10.0",
+    "mcp>=1.9.0",
+    "replicate>=0.32.0",
+    "websocket-client>=1.8.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["FractFlow*"]
