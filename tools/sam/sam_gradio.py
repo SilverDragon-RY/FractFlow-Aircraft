@@ -118,7 +118,7 @@ def apply_mask_overlay(image, mask, alpha=0.3):
         min_x, max_x = np.min(mask_coords[1]), np.max(mask_coords[1])
         
         # 绘制红色边界框
-        bbox_thickness = 3
+        bbox_thickness = 10
         
         # 绘制水平线
         for t in range(bbox_thickness):
