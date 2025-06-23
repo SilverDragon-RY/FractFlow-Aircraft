@@ -1,3 +1,4 @@
+# python safety_agent.py --query "Image:/home/bld/dyx/FractFlow-Aircraft/tools/sam/tmp/test_bbox.png"
 import os
 import sys
 
