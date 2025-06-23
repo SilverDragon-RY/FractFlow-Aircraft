@@ -46,7 +46,7 @@ class Safety_Agent(ToolTemplate):
 """
     
     TOOLS = [
-        ("tools/safety_vlm", "landing_safety_check_operations")
+        ("safety_vlm.py", "landing_safety_check_operations")
     ]
     
     MCP_SERVER_NAME = "landing_safety_checker"
