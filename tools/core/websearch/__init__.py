@@ -1,11 +1,21 @@
 """
-Web Search Tool - Source Package
+Search Engine Package
 
-This package contains the core implementation of the web search and browsing tool.
-It includes modules for performing web searches, browsing websites, and
-extracting content from web pages.
+This package provides implementations of various web search engines.
 
-Author: Xinli Xu (xxu068@connect.hkust-gz.edu.cn) - Envision Lab
-Date: 2025-04-28
-License: MIT License
-""" 
+Author: Xinli Xu
+Date: 2025-05-02
+"""
+
+from .base import SearchItem, WebSearchEngine
+from .google_search import GoogleSearchEngine
+from .baidu_search import BaiduSearchEngine
+from .duckduckgo_search import DuckDuckGoSearchEngine
+
+__all__ = [
+    "WebSearchEngine",
+    "SearchItem",
+    "GoogleSearchEngine",
+    "BaiduSearchEngine",
+    "DuckDuckGoSearchEngine",
+]
