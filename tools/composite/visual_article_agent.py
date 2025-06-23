@@ -61,6 +61,8 @@ class VisualArticleTool(ToolTemplate):
       - 严禁使用"（后续内容...）"、"此处省略"等任何占位符
       - 必须写出真实完整的故事内容，而不是描述性说明
    b) 调用 image_creator_agent 生成对应插图
+      - 必须指定图片保存路径：output/visual_article_generator/[项目名]/images/sectionX-figY.png
+      - 确保路径参数准确传递给图片生成器
    c) 确认操作成功后继续下一章节
 
 【内容创作标准】
@@ -74,6 +76,9 @@ class VisualArticleTool(ToolTemplate):
 【工具使用规范】
 - file_manager_agent：专门用于文件写入操作
 - image_creator_agent：专门用于图片生成操作
+  - 必须传递图片保存路径参数
+  - 路径格式：output/visual_article_generator/[项目名]/images/sectionX-figY.png
+  - 确保图片保存到指定位置
 
 【文件路径规范】
 - 文章路径：output/visual_article_generator/[项目名]/article.md
@@ -96,7 +101,7 @@ class VisualArticleTool(ToolTemplate):
     # 分形智能体：调用其他智能体
     TOOLS = [
         ("tools/core/file_io/file_io_mcp.py", "file_manager_agent"),
-        ("tools/core/gpt_imagen/gpt_imagen_agent.py", "image_creator_agent")
+        ("tools/core/comfyui/comfyui_agent.py", "image_creator_agent")
     ]
     
     MCP_SERVER_NAME = "visual_article_tool"
@@ -112,26 +117,7 @@ Input format:
 - May include specific image requirements or visual themes
 - Can request specific article structure or section organization
 
-Returns:
-- 'article_path': Path to the generated Markdown article
-- 'images_generated': List of generated image files and their descriptions
-- 'article_structure': Overview of the created content structure
-- 'success': Boolean indicating successful article generation
-- 'message': Additional information about the generation process
 
-Examples:
-- "Write a comprehensive article about renewable energy with illustrations"
-- "Create a visual guide to machine learning concepts for beginners"
-- "Generate an article about sustainable travel with scenic images"
-- "Write a technical overview of blockchain technology with diagrams"
-- "Create a lifestyle article about urban gardening with how-to images"
-
-Features:
-- Automatic image generation for each article section
-- Structured Markdown formatting with proper headings
-- Consistent file organization in project directories
-- Image path validation and consistency checking
-- Multi-section article workflow with visual coherence
     """
     
     @classmethod

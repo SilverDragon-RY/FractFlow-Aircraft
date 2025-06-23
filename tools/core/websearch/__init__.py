@@ -1,21 +1,14 @@
 """
-Search Engine Package
+Web Search Tool Package
 
-This package provides implementations of various web search engines.
+This package provides web search and browsing capabilities that can be
+used with the FractFlow framework. The tool is designed to be used as an agent tool
+for searching the web and retrieving information from websites.
 
-Author: Xinli Xu
-Date: 2025-05-02
-"""
+The package includes core logic for web search and browsing operations, a server interface 
+for exposing these operations as tools, and tests for verifying functionality.
 
-from .base import SearchItem, WebSearchEngine
-from .google_search import GoogleSearchEngine
-from .baidu_search import BaiduSearchEngine
-from .duckduckgo_search import DuckDuckGoSearchEngine
-
-__all__ = [
-    "WebSearchEngine",
-    "SearchItem",
-    "GoogleSearchEngine",
-    "BaiduSearchEngine",
-    "DuckDuckGoSearchEngine",
-]
+Author: Xinli Xu (xxu068@connect.hkust-gz.edu.cn) - Envision Lab
+Date: 2025-04-28
+License: MIT License
+""" 
