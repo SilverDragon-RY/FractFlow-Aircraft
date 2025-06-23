@@ -77,7 +77,7 @@ async def Safety_VLM(image_path: str) -> str:
         base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
     )
     # --- --- ---
-    prompt = "请分析图中红色蒙版区域的降落安全性。"
+    prompt = "请分析图中红色bounding box区域的降落安全性。"
     completion = client.chat.completions.create(
         model="qwen-vl-max",  # 此处以qwen-vl-plus为例，可按需更换模型名称。模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
         messages=[{"role": "user","content": [

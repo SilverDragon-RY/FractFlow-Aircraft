@@ -107,6 +107,42 @@ def apply_mask_overlay(image, mask, alpha=0.3):
     # save img_array and mask
     Image.fromarray(img_array).save('./tmp/test_overlay.png')
     Image.fromarray(mask_3d).save('./tmp/test_mask.png')
+    
+    # 绘制红色bounding box并保存
+    bbox_img = image.copy()
+    
+    # 找到mask的边界框
+    mask_coords = np.where(overlay_region[:, :, 0])  # 使用第一个通道即可
+    if len(mask_coords[0]) > 0:  # 确保有mask区域
+        min_y, max_y = np.min(mask_coords[0]), np.max(mask_coords[0])
+        min_x, max_x = np.min(mask_coords[1]), np.max(mask_coords[1])
+        
+        # 绘制红色边界框
+        bbox_thickness = 3
+        
+        # 绘制水平线
+        for t in range(bbox_thickness):
+            # 上边
+            if min_y + t < bbox_img.shape[0]:
+                bbox_img[min_y + t, min_x:max_x + 1] = [255, 0, 0]
+            # 下边
+            if max_y - t >= 0:
+                bbox_img[max_y - t, min_x:max_x + 1] = [255, 0, 0]
+        
+        # 绘制垂直线
+        for t in range(bbox_thickness):
+            # 左边
+            if min_x + t < bbox_img.shape[1]:
+                bbox_img[min_y:max_y + 1, min_x + t] = [255, 0, 0]
+            # 右边
+            if max_x - t >= 0:
+                bbox_img[min_y:max_y + 1, max_x - t] = [255, 0, 0]
+        
+        print(f'>>> bounding box: ({min_x}, {min_y}) to ({max_x}, {max_y})')
+    
+    # 保存带有bounding box的图片
+    Image.fromarray(bbox_img).save('./tmp/test_bbox.png')
+    
     return img_array
 
 def create_loading_image(original_img, message="正在处理..."):
@@ -375,4 +411,4 @@ with gr.Blocks(title="图片点击坐标标记器") as demo:
 
 # 启动应用
 if __name__ == "__main__":
-    demo.launch(share=False, server_name="127.0.0.1", server_port=7861) 
+    demo.launch(share=False, server_name="127.0.0.1", server_port=7862) 
