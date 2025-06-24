@@ -7,7 +7,7 @@ import time
 import threading
 
 from sam.sam_mcp import SAM_TOOL
-
+from safety_check.safety_agent import Safety_Agent
 
 # 配置固定的图片路径
 # 请根据实际情况修改路径
@@ -98,7 +98,10 @@ class Gradio_Interface():
         # --- init all components ---
         self.sam_tool = SAM_TOOL(mask_type="boundary", crop_size=1024)
         print("SAM Component Loaded !")
+        self.safety_agent = Safety_Agent()
+        print("Safety VLM Component Loaded !")
         # ---------------------------
+
         # init gradio IO after all other components
         self._build_interface()
     
@@ -112,22 +115,22 @@ class Gradio_Interface():
             with gr.Row():
                 with gr.Column():   
                     # 显示点击坐标信息
-                    coordinate_info = gr.Textbox(
+                    self.coordinate_info = gr.Textbox(
                         label="信息", 
                         value="无",
                         lines=6,
                         interactive=False
-                    )         
+                    )
                     # 清除按钮
-                    clear_btn = gr.Button("清除标记点")
+                    self.clear_btn = gr.Button("清除标记点")
                     # 重新加载按钮
-                    reload_btn = gr.Button("重新加载图片和mask")     
+                    self.reload_btn = gr.Button("重新加载图片和mask")     
                     # 外部触发重新加载按钮（用于测试）
-                    external_reload_btn = gr.Button("模拟外部触发重新加载")
+                    self.external_reload_btn = gr.Button("模拟外部触发重新加载")
                 
                 with gr.Column():
                     # 图片显示组件
-                    image_display = gr.Image(
+                    self.image_display = gr.Image(
                         label="点击图片来标记位置",
                         value=initial_image,
                         interactive=True,
@@ -135,8 +138,8 @@ class Gradio_Interface():
                     )
             
             # 保存组件引用
-            image_display_ref = image_display
-            coordinate_info_ref = coordinate_info
+            self.image_display_ref = self.image_display
+            self.coordinate_info_ref = self.coordinate_info
             
             # 定时检查重新加载触发器
             def check_and_reload():
@@ -148,14 +151,14 @@ class Gradio_Interface():
             timer = gr.Timer(value=3)
             timer.tick(
                 fn=check_and_reload,
-                outputs=[image_display]
+                outputs=[self.image_display, self.coordinate_info]
             )
             
             # 事件绑定
-            image_display.select(
+            self.image_display.select(
                 fn=self.sam_tool.detect,
-                inputs=[image_display],
-                outputs=[image_display, coordinate_info]
+                inputs=[self.image_display],
+                outputs=[self.image_display, self.coordinate_info]
             )
             
             #clear_btn.click(
@@ -163,19 +166,19 @@ class Gradio_Interface():
             #    outputs=[image_display, coordinate_info]
             #)
             
-            reload_btn.click(
+            self.reload_btn.click(
                 fn=self.sam_tool.load_frame,
-                outputs=[image_display]
+                outputs=[self.image_display, self.coordinate_info]
             )
             
-            external_reload_btn.click(
+            self.external_reload_btn.click(
                 fn=lambda: (trigger_external_reload(), "已触发外部重新加载")[1],
-                outputs=[coordinate_info]
+                outputs=[self.coordinate_info, self.coordinate_info]
             )
         self.interface = interface
 
     def launch(self):
-        self.interface.launch(share=self.share, server_name=self.server_name, server_port=self.server_port)
+        self.interface.queue().launch(share=self.share, server_name=self.server_name, server_port=self.server_port)
 # 启动应用
 if __name__ == "__main__":
     my_gradio = Gradio_Interface()

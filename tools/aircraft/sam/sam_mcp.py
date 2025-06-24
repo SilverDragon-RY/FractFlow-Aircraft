@@ -9,6 +9,7 @@ import time
 import threading
 from .sam_utils import SAM_tool, SAMClient
 import gradio as gr
+import asyncio
 
 # helper functions
 def create_loading_image(original_img):
@@ -259,13 +260,15 @@ class SAM_TOOL:
         loading_image = create_loading_image(img_array)
 
         yield loading_image, f"正在识别...\n当前识别坐标: ({x}, {y})"
-        
+        await asyncio.sleep(0)
         # 调用SAM模型
         yield loading_image, f"正在调用SAM模型进行分割...\n当前点击坐标: ({x}, {y})"
+        await asyncio.sleep(0)
         mask = SAM_tool(self.client, image, [[x, y]])
         
         # 处理图像
         yield loading_image, f"正在应用mask叠加...\n当前点击坐标: ({x}, {y})"
+        await asyncio.sleep(0)
         
         img_array = self.apply_mask_overlay(img_array, mask)
         
