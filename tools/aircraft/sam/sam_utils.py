@@ -44,14 +44,14 @@ class SAMClient:
         except Exception as e:
             print(f"健康检查失败: {e}")
             return False
+
+    def encode_image(self, image: Image.Image) -> str:
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return base64_image
     
-    def encode_image(self, image_path):
-        """将图像文件编码为base64"""
-        with open(image_path, 'rb') as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-        return encoded_string
-    
-    def segment_image(self, image_path, prompt_points, prompt_labels=None):
+    def segment_image(self, image, prompt_points, prompt_labels=None):
         """
         发送图像分割请求
         
@@ -62,7 +62,7 @@ class SAMClient:
         """
         try:
             # 编码图像
-            image_base64 = self.encode_image(image_path)
+            image_base64 = self.encode_image(image)
             
             # 准备请求数据
             data = {
@@ -171,24 +171,7 @@ def request_result_from_replicate(response: dict) -> Image.Image:
 
     # trigger_external_reload()
 
-
-# @mcp.tool()
-# async 
-
-
-def SAM_tool(client: SAMClient, image_path: str, prompt_points: List[List[int]]) -> str:
-    '''
-    This tool uses Qwen-VL-Plus model to analyse the safety level of a landing spot from a given masked image input.
-    
-    Args:
-        image_path (str): Full path to the image file to process. The path should be accessible
-                          by the system and point to a valid image file (e.g., JPG, PNG).
-
-    Returns:
-        str: A safety level (Green, Yellow, Red) and its reasoning.
-    '''
-    
-    
+def SAM_tool(client: SAMClient, image, prompt_points):
     # 检查服务器健康状态
     if not client.check_health():
         print("服务器不可用，请先启动服务器")
@@ -199,14 +182,8 @@ def SAM_tool(client: SAMClient, image_path: str, prompt_points: List[List[int]])
         print("模型初始化失败")
         return
 
-    # 示例：分割图像
-    image_path = normalize_path(image_path)
-    # prompt_points = [[100, 100], [200, 200]]  # 示例点击点
-    # prompt_labels = [1, 1]  # 1表示前景点
-    
     # 执行分割
-    mask = client.segment_image(image_path, prompt_points, None)
-    client.save_mask(mask, "./tmp/individual_masks/individual_masks_0.png")
+    mask = client.segment_image(image, prompt_points, None)
     return mask
 
 

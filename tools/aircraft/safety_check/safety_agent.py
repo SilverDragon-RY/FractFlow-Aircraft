@@ -73,7 +73,7 @@ class Safety_Agent(ToolTemplate):
     
     @classmethod
     def create_config(cls):
-        """Custom configuration for VQA tool"""
+        """Custom configuration for tool"""
         from FractFlow.infra.config import ConfigManager
         from dotenv import load_dotenv
         

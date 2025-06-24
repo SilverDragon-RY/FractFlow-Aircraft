@@ -6,11 +6,12 @@ import glob
 import time
 import threading
 
-from sam_utils import SAM_tool, SAMClient
+from .sam_utils import SAM_tool, SAMClient
+
 
 # 配置固定的图片路径
 # 请根据实际情况修改路径
-IMAGE_PATH = "./tmp/camera/微信图片_20250622132107.png"
+IMAGE_PATH = "./tmp/camera/Test1.png"
 MASK_DIR = "./tmp/individual_masks"  # mask文件夹路径
 RELOAD_TRIGGER_FILE = "./tmp/reload_trigger.txt"  # 重新加载触发文件
 
@@ -469,83 +470,91 @@ def get_initial_state():
     return load_image_from_path()
 
 # 创建Gradio界面
-with gr.Blocks(title="图片点击坐标标记器") as demo:
-    gr.Markdown("# 图片点击坐标标记器")
-    gr.Markdown("在图片上点击来标记位置并记录像素坐标。点击位置如果有对应的mask，会以绿色半透明显示。")
-    gr.Markdown("**外部进程重新加载**: 创建文件 `reload_trigger.txt` 可触发重新加载")
-    
-    # 获取初始图片和信息
-    initial_image, initial_info = get_initial_state()
-    
-    with gr.Row():
-        with gr.Column():            
-            # 显示点击坐标信息
-            coordinate_info = gr.Textbox(
-                label="坐标信息", 
-                value=initial_info,
-                lines=6,
-                interactive=False
-            )
-            
-            # 清除按钮
-            clear_btn = gr.Button("清除标记点")
-            
-            # 重新加载按钮
-            reload_btn = gr.Button("重新加载图片和mask")
-            
-            # 外部触发重新加载按钮（用于测试）
-            external_reload_btn = gr.Button("模拟外部触发重新加载")
+class Gradio_Interface:
+    def __init__(self, share=False, server_name="127.0.0.1", server_port=7863):
+        self.interface = gr.Blocks(title="图片点击坐标标记器")
+        self.share = share
+        self.server_name = server_name
+        self.server_port = server_port
+        gr.Markdown("# 图片点击坐标标记器")
+        gr.Markdown("在图片上点击来标记位置并记录像素坐标。点击位置如果有对应的mask，会以绿色半透明显示。")
+        gr.Markdown("**外部进程重新加载**: 创建文件 `reload_trigger.txt` 可触发重新加载")
         
-        with gr.Column():
-            # 图片显示组件
-            image_display = gr.Image(
-                label="点击图片来标记位置",
-                value=initial_image,
-                interactive=True,
-                show_download_button=False
-            )
-    
-    # 保存组件引用
-    image_display_ref = image_display
-    coordinate_info_ref = coordinate_info
-    
-    # 定时检查重新加载触发器
-    def check_and_reload():
-        if check_reload_trigger():
-            return load_image_from_path()
-        return gr.update(), gr.update()
-    
-    # 每3秒检查一次是否需要重新加载
-    timer = gr.Timer(value=3)
-    timer.tick(
-        fn=check_and_reload,
-        outputs=[image_display, coordinate_info]
-    )
-    
-    # 事件绑定
-    image_display.select(
-        fn=handle_image_click,
-        inputs=[image_display],
-        outputs=[image_display, coordinate_info]
-        # 移除show_progress=True，因为我们现在使用generator
-    )
-    
-    clear_btn.click(
-        fn=clear_points,
-        outputs=[image_display, coordinate_info]
-    )
-    
-    reload_btn.click(
-        fn=load_image_from_path,
-        outputs=[image_display, coordinate_info]
-    )
-    
-    external_reload_btn.click(
-        fn=lambda: (trigger_external_reload(), "已触发外部重新加载")[1],
-        outputs=[coordinate_info]
-    )
+        # 获取初始图片和信息
+        initial_image, initial_info = get_initial_state()
+        
+        with gr.Row():
+            with gr.Column():            
+                # 显示点击坐标信息
+                coordinate_info = gr.Textbox(
+                    label="坐标信息", 
+                    value=initial_info,
+                    lines=6,
+                    interactive=False
+                )
+                
+                # 清除按钮
+                clear_btn = gr.Button("清除标记点")
+                
+                # 重新加载按钮
+                reload_btn = gr.Button("重新加载图片和mask")
+                
+                # 外部触发重新加载按钮（用于测试）
+                external_reload_btn = gr.Button("模拟外部触发重新加载")
+            
+            with gr.Column():
+                # 图片显示组件
+                image_display = gr.Image(
+                    label="点击图片来标记位置",
+                    value=initial_image,
+                    interactive=True,
+                    show_download_button=False
+                )
+        
+        # 保存组件引用
+        image_display_ref = image_display
+        coordinate_info_ref = coordinate_info
+        
+        # 定时检查重新加载触发器
+        def check_and_reload():
+            if check_reload_trigger():
+                return load_image_from_path()
+            return gr.update(), gr.update()
+        
+        # 每3秒检查一次是否需要重新加载
+        timer = gr.Timer(value=3)
+        timer.tick(
+            fn=check_and_reload,
+            outputs=[image_display, coordinate_info]
+        )
+        
+        # 事件绑定
+        image_display.select(
+            fn=handle_image_click,
+            inputs=[image_display],
+            outputs=[image_display, coordinate_info]
+            # 移除show_progress=True，因为我们现在使用generator
+        )
+        
+        clear_btn.click(
+            fn=clear_points,
+            outputs=[image_display, coordinate_info]
+        )
+        
+        reload_btn.click(
+            fn=load_image_from_path,
+            outputs=[image_display, coordinate_info]
+        )
+        
+        external_reload_btn.click(
+            fn=lambda: (trigger_external_reload(), "已触发外部重新加载")[1],
+            outputs=[coordinate_info]
+        )
+    def launch(self):
+        self.interface.launch(share = self.share, server_name=self.server_name, server_port=self.server_port)
 
 
 # 启动应用
 if __name__ == "__main__":
-    demo.launch(share=False, server_name="127.0.0.1", server_port=7863) 
+    pass
+    #demo.launch(share=False, server_name="127.0.0.1", server_port=7863) 
