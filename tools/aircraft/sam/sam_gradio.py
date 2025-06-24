@@ -6,7 +6,7 @@ import glob
 import time
 import threading
 
-from sam_mcp_local import SAM_tool, SAMClient
+from sam_utils import SAM_tool, SAMClient
 
 # 配置固定的图片路径
 # 请根据实际情况修改路径
@@ -256,7 +256,7 @@ def handle_image_click(image, evt: gr.SelectData):
         loading_img = create_loading_image(original_image, "正在初始化SAM客户端...")
         yield loading_img, f"正在初始化SAM客户端...\n当前点击坐标: ({x}, {y})"
         
-        client = SAMClient(server_url="http://localhost:5000")
+        client = SAMClient(server_url="http://10.30.58.120:5000")
         print('>>> client initialized')
     
     # 调用SAM模型
