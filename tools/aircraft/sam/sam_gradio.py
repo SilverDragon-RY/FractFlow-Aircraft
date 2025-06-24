@@ -178,7 +178,7 @@ def draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=2):
     
     return img_array
 
-def center_crop_mask_region(image, mask, crop_size=512, save_path='./tmp/test_boundary_cropped.png'):
+def center_crop_mask_region(image, mask, crop_size=1024, save_path='./tmp/test_boundary_cropped.png'):
     """
     围绕mask非0值的中心进行center crop并保存
     
@@ -278,7 +278,7 @@ def apply_mask_overlay(image, mask, alpha=0.3):
     Image.fromarray(boundary_img).save('./tmp/test_boundary.png')
     
     # 对boundary_img进行center crop并保存
-    center_crop_mask_region(boundary_img, mask, crop_size=512, save_path='./tmp/test_boundary_cropped.png')
+    center_crop_mask_region(boundary_img, mask, crop_size=1024, save_path='./tmp/test_boundary_cropped.png')
     
     return img_array
 
