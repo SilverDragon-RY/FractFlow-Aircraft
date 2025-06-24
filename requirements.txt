@@ -111,3 +111,8 @@ loguru
 pyyaml
 json_repair
 tokencost
+opencv-python
+flask
+torch
+segment_anything
+torchvision
