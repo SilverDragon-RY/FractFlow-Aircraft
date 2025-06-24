@@ -80,7 +80,10 @@ python sam_gradio.py
 
 进入/FractFlow-Aircraft/tools/aircraft/safety_check
 ```
+原图：
 python safety_agent.py --query "Image:path/to/FractFlow-Aircraft/tools/aircraft/sam/tmp/test_boundary.png"
+cropped图：
+python safety_agent.py --query "Image:path/to/FractFlow-Aircraft/tools/aircraft/sam/tmp/test_boundary_cropped.png"
 ```
 (需要修改为自己的路径)
 
