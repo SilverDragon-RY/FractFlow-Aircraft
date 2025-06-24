@@ -116,3 +116,4 @@ flask
 torch
 segment_anything
 torchvision
+gradio

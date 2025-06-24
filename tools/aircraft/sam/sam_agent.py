@@ -18,7 +18,7 @@ class VQATool(ToolTemplate):
 """
     
     TOOLS = [
-        ("tools/sam_mcp.py", "segment_image_with_same")
+        ("tools/aircraft/sam_mcp.py", "segment_image_with_same")
     ]
     
     MCP_SERVER_NAME = "segment_image_with_same"
