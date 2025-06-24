@@ -2,20 +2,20 @@
 
 cd ..../FractFlow-Aircraft/tools/aircraft
 
-创建环境
+### 创建环境
 uv venv
 
-激活环境
+### 激活环境
 source .venv/bin/activate
 
 optional：pip清华源
 -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 
 
-配置基础环境
+### 配置基础环境
 uv pip install openai pyyaml loguru dotenv mcp pillow replicate websocket json-repair tokencost gradio -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 
-配置SAM
+### 配置SAM
 cd ./sam
 git clone https://github.com/facebookresearch/segment-anything.git
 cd ./segment-anything
@@ -23,19 +23,19 @@ uv pip install -e .
 uv pip install opencv-python pycocotools matplotlib onnxruntime onnx flask -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 uv pip install torch torchvision torchaudio -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 
-下载权重：
+### 下载权重：
 下载sam_vit_h_4b8939.pth到/path/to/segment-anything/sam_vit_h_4b8939.pth
 下载源：https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
 
-环境路径设置
+### 环境路径设置
 export PYTHONPATH=$PYTHONPATH:/path/to/segment-anything (要自己设置segment-anything的路径)
 export PYTHONPATH=$PYTHONPATH:/path/to/FractFlow-Aircraft
 
 
-设置可见gpu
+### 设置可见gpu
 export CUDA_VISIBLE_DEVICES="1"
 
-运行：
+### 运行：
 请在三个不同的终端分别运行下面的代码：
 （记得激活venv环境）
 
