@@ -10,7 +10,7 @@ from sam_utils import SAM_tool, SAMClient
 
 # 配置固定的图片路径
 # 请根据实际情况修改路径
-IMAGE_PATH = "./tmp/camera/test.jpg"
+IMAGE_PATH = "./tmp/camera/微信图片_20250622132107.png"
 MASK_DIR = "./tmp/individual_masks"  # mask文件夹路径
 RELOAD_TRIGGER_FILE = "./tmp/reload_trigger.txt"  # 重新加载触发文件
 
@@ -178,6 +178,71 @@ def draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=2):
     
     return img_array
 
+def center_crop_mask_region(image, mask, crop_size=512, save_path='./tmp/test_boundary_cropped.png'):
+    """
+    围绕mask非0值的中心进行center crop并保存
+    
+    Args:
+        image: 要裁剪的图像数组
+        mask: mask数组，用于确定中心位置
+        crop_size: 裁剪后的尺寸，默认512x512
+        save_path: 保存路径
+        
+    Returns:
+        cropped_image: 裁剪后的图像，如果没有mask区域则返回None
+    """
+    # 找到mask中非0值的中心
+    mask_coords = np.where(mask != 0)
+    if len(mask_coords[0]) == 0:
+        print('>>> 没有找到mask区域，无法进行center crop')
+        return None
+    
+    # 计算mask中心
+    center_y = int(np.mean(mask_coords[0]))
+    center_x = int(np.mean(mask_coords[1]))
+    
+    half_size = crop_size // 2
+    h, w = image.shape[:2]
+    
+    # 计算crop区域
+    start_x = max(0, center_x - half_size)
+    end_x = min(w, center_x + half_size)
+    start_y = max(0, center_y - half_size)
+    end_y = min(h, center_y + half_size)
+    
+    # 如果图像边界不够，调整中心位置
+    if end_x - start_x < crop_size:
+        if start_x == 0:
+            end_x = min(w, crop_size)
+        else:
+            start_x = max(0, w - crop_size)
+    
+    if end_y - start_y < crop_size:
+        if start_y == 0:
+            end_y = min(h, crop_size)
+        else:
+            start_y = max(0, h - crop_size)
+    
+    # 执行crop
+    cropped_image = image[start_y:end_y, start_x:end_x]
+    
+    # 如果裁剪后的尺寸不足crop_size x crop_size，进行padding
+    if cropped_image.shape[0] < crop_size or cropped_image.shape[1] < crop_size:
+        # 创建crop_size x crop_size的空白图像
+        padded_img = np.zeros((crop_size, crop_size, 3), dtype=np.uint8)
+        # 计算padding位置
+        pad_y = (crop_size - cropped_image.shape[0]) // 2
+        pad_x = (crop_size - cropped_image.shape[1]) // 2
+        padded_img[pad_y:pad_y+cropped_image.shape[0], 
+                  pad_x:pad_x+cropped_image.shape[1]] = cropped_image
+        cropped_image = padded_img
+    
+    # 保存裁剪后的图像
+    Image.fromarray(cropped_image).save(save_path)
+    print(f'>>> boundary cropped and saved: center=({center_x}, {center_y}), crop_region=({start_x}, {start_y}) to ({end_x}, {end_y})')
+    
+    return cropped_image
+
 def apply_mask_overlay(image, mask, alpha=0.3):
     print('>>> apply_mask_overlay: ', mask.shape)
     """将mask以绿色半透明方式叠加到图像上"""
@@ -211,6 +276,9 @@ def apply_mask_overlay(image, mask, alpha=0.3):
     # 绘制红色边缘轮廓并保存
     boundary_img = draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=10)
     Image.fromarray(boundary_img).save('./tmp/test_boundary.png')
+    
+    # 对boundary_img进行center crop并保存
+    center_crop_mask_region(boundary_img, mask, crop_size=512, save_path='./tmp/test_boundary_cropped.png')
     
     return img_array
 
