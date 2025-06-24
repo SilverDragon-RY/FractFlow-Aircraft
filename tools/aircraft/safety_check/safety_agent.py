@@ -1,4 +1,5 @@
 # python safety_agent.py --query "Image:/home/bld/dyx/FractFlow-Aircraft/tools/sam/tmp/test_bbox.png"
+# python safety_agent.py --query "Image:/home/bld/dyx/FractFlow-Aircraft/tools/sam/tmp/test_boundary.png"
 import os
 import sys
 

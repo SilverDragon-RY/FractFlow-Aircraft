@@ -66,6 +66,118 @@ def find_mask_at_position(x, y):
     
     return None, None
 
+def apply_green_overlay(img_array, mask, alpha=0.3):
+    """应用绿色半透明遮罩到图像上"""
+    # 创建绿色遮罩
+    green_overlay = np.zeros_like(img_array)
+    green_overlay[:, :, 1] = 255  # 绿色通道
+    
+    # 将mask扩展到3个通道
+    mask_3d = np.stack([mask, mask, mask], axis=2)
+    
+    # 确保mask和图片尺寸匹配
+    if mask_3d.shape[:2] != img_array.shape[:2]:
+        print(f"警告: mask尺寸 {mask_3d.shape[:2]} 与图片尺寸 {img_array.shape[:2]} 不匹配")
+        return img_array, mask_3d
+    
+    # 应用半透明绿色遮罩
+    print(np.unique(mask_3d))
+    overlay_region = mask_3d != 0
+    img_array[overlay_region] = (
+        img_array[overlay_region] * (1 - alpha) + 
+        green_overlay[overlay_region] * alpha
+    ).astype(np.uint8)
+    print('>>> overlay finished')
+    
+    return img_array, mask_3d
+
+def draw_bounding_box(image, overlay_region, thickness=10, color=[255, 0, 0]):
+    """在mask区域绘制边界框"""
+    bbox_img = image.copy()
+    
+    # 找到mask的边界框
+    mask_coords = np.where(overlay_region[:, :, 0])  # 使用第一个通道即可
+    if len(mask_coords[0]) > 0:  # 确保有mask区域
+        min_y, max_y = np.min(mask_coords[0]), np.max(mask_coords[0])
+        min_x, max_x = np.min(mask_coords[1]), np.max(mask_coords[1])
+        
+        # 绘制边界框
+        # 绘制水平线
+        for t in range(thickness):
+            # 上边
+            if min_y + t < bbox_img.shape[0]:
+                bbox_img[min_y + t, min_x:max_x + 1] = color
+            # 下边
+            if max_y - t >= 0:
+                bbox_img[max_y - t, min_x:max_x + 1] = color
+        
+        # 绘制垂直线
+        for t in range(thickness):
+            # 左边
+            if min_x + t < bbox_img.shape[1]:
+                bbox_img[min_y:max_y + 1, min_x + t] = color
+            # 右边
+            if max_x - t >= 0:
+                bbox_img[min_y:max_y + 1, max_x - t] = color
+        
+        print(f'>>> bounding box: ({min_x}, {min_y}) to ({max_x}, {max_y})')
+    
+    return bbox_img
+
+def draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=2):
+    """根据mask绘制红色的边缘轮廓"""
+    if mask is None or mask.size == 0:
+        return image
+    
+    img_array = image.copy()
+    h, w = mask.shape
+    
+    # 创建边缘检测mask
+    boundary_mask = np.zeros_like(mask, dtype=bool)
+    
+    # 检测边缘：如果当前像素是mask区域，但周围有非mask区域，则为边缘
+    for y in range(h):
+        for x in range(w):
+            if mask[y, x] != 0:  # 当前像素在mask内（修改：使用!= 0而不是== 1）
+                # 检查8邻域
+                is_boundary = False
+                for dy in [-1, 0, 1]:
+                    for dx in [-1, 0, 1]:
+                        if dy == 0 and dx == 0:
+                            continue
+                        ny, nx = y + dy, x + dx
+                        # 如果邻域超出边界或者邻域不在mask内，则当前像素是边缘
+                        if (ny < 0 or ny >= h or nx < 0 or nx >= w or 
+                            mask[ny, nx] == 0):  # 这里保持== 0，检查邻域是否为0
+                            is_boundary = True
+                            break
+                    if is_boundary:
+                        break
+                
+                if is_boundary:
+                    boundary_mask[y, x] = True
+    
+    # 根据thickness参数加粗边缘
+    if thickness > 1:
+        thick_boundary = np.zeros_like(boundary_mask)
+        boundary_coords = np.where(boundary_mask)
+        for y, x in zip(boundary_coords[0], boundary_coords[1]):
+            for dy in range(-thickness//2, thickness//2 + 1):
+                for dx in range(-thickness//2, thickness//2 + 1):
+                    ny, nx = y + dy, x + dx
+                    if 0 <= ny < h and 0 <= nx < w:
+                        thick_boundary[ny, nx] = True
+        boundary_mask = thick_boundary
+    
+    # 将边缘应用到图像上
+    boundary_coords = np.where(boundary_mask)
+    if len(boundary_coords[0]) > 0:
+        img_array[boundary_coords[0], boundary_coords[1]] = color
+    
+    print(f'>>> boundary drawn with {len(boundary_coords[0])} pixels')
+    
+    return img_array
+
 def apply_mask_overlay(image, mask, alpha=0.3):
     print('>>> apply_mask_overlay: ', mask.shape)
     """将mask以绿色半透明方式叠加到图像上"""
@@ -84,64 +196,21 @@ def apply_mask_overlay(image, mask, alpha=0.3):
     else:
         return image  # 不是3维数组，返回原图
     
-    # 创建绿色遮罩
-    green_overlay = np.zeros_like(img_array)
-    green_overlay[:, :, 1] = 255  # 绿色通道
+    # 应用绿色遮罩
+    img_array, mask_3d = apply_green_overlay(img_array, mask, alpha)
     
-    # 将mask扩展到3个通道
-    mask_3d = np.stack([mask, mask, mask], axis=2)
-    
-    # 确保mask和图片尺寸匹配
-    if mask_3d.shape[:2] != img_array.shape[:2]:
-        print(f"警告: mask尺寸 {mask_3d.shape[:2]} 与图片尺寸 {img_array.shape[:2]} 不匹配")
-        return img_array
-    
-    # 应用半透明绿色遮罩
-    print(np.unique(mask_3d))
-    overlay_region = mask_3d != 0
-    img_array[overlay_region] = (
-        img_array[overlay_region] * (1 - alpha) + 
-        green_overlay[overlay_region] * alpha
-    ).astype(np.uint8)
-    print('>>> overlay finished')
-    # save img_array and mask
+    # 保存overlay结果和mask
     Image.fromarray(img_array).save('./tmp/test_overlay.png')
     Image.fromarray(mask_3d).save('./tmp/test_mask.png')
     
-    # 绘制红色bounding box并保存
-    bbox_img = image.copy()
-    
-    # 找到mask的边界框
-    mask_coords = np.where(overlay_region[:, :, 0])  # 使用第一个通道即可
-    if len(mask_coords[0]) > 0:  # 确保有mask区域
-        min_y, max_y = np.min(mask_coords[0]), np.max(mask_coords[0])
-        min_x, max_x = np.min(mask_coords[1]), np.max(mask_coords[1])
-        
-        # 绘制红色边界框
-        bbox_thickness = 10
-        
-        # 绘制水平线
-        for t in range(bbox_thickness):
-            # 上边
-            if min_y + t < bbox_img.shape[0]:
-                bbox_img[min_y + t, min_x:max_x + 1] = [255, 0, 0]
-            # 下边
-            if max_y - t >= 0:
-                bbox_img[max_y - t, min_x:max_x + 1] = [255, 0, 0]
-        
-        # 绘制垂直线
-        for t in range(bbox_thickness):
-            # 左边
-            if min_x + t < bbox_img.shape[1]:
-                bbox_img[min_y:max_y + 1, min_x + t] = [255, 0, 0]
-            # 右边
-            if max_x - t >= 0:
-                bbox_img[min_y:max_y + 1, max_x - t] = [255, 0, 0]
-        
-        print(f'>>> bounding box: ({min_x}, {min_y}) to ({max_x}, {max_y})')
-    
-    # 保存带有bounding box的图片
+    # 绘制红色边界框并保存
+    overlay_region = mask_3d != 0
+    bbox_img = draw_bounding_box(image, overlay_region, thickness=10, color=[255, 0, 0])
     Image.fromarray(bbox_img).save('./tmp/test_bbox.png')
+    
+    # 绘制红色边缘轮廓并保存
+    boundary_img = draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=10)
+    Image.fromarray(boundary_img).save('./tmp/test_boundary.png')
     
     return img_array
 
@@ -411,4 +480,4 @@ with gr.Blocks(title="图片点击坐标标记器") as demo:
 
 # 启动应用
 if __name__ == "__main__":
-    demo.launch(share=False, server_name="127.0.0.1", server_port=7862) 
+    demo.launch(share=False, server_name="127.0.0.1", server_port=7863) 
