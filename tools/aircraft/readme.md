@@ -39,7 +39,7 @@ export CUDA_VISIBLE_DEVICES="1"
 请在三个不同的终端分别运行下面的代码：
 （记得激活venv环境）
 
-1. 运行sam_server.py
+1.运行sam_server.py
 （本条不需要执行，yuxin在校园网的http://10.30.58.120:5000部署了sam server，并且已经hard code到sam_gradio.py了）
 进入/FractFlow-Aircraft/tools/aircraft/sam
 python sam_server.py
