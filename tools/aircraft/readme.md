@@ -27,8 +27,10 @@ uv pip install torch torchvision torchaudio -i https://mirrors.tuna.tsinghua.edu
 下载sam_vit_h_4b8939.pth到/path/to/segment-anything/sam_vit_h_4b8939.pth
 下载源：https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
 
-### 环境路径设置
+### 环境路径设置(optional)
+
 export PYTHONPATH=$PYTHONPATH:/path/to/segment-anything (要自己设置segment-anything的路径)
+
 export PYTHONPATH=$PYTHONPATH:/path/to/FractFlow-Aircraft
 
 
