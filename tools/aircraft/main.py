@@ -69,8 +69,6 @@ from safety_check.safety_agent import Safety_Agent
 #     """获取初始状态"""
 #     return load_image_from_path()
 
-
-
 class Gradio_Interface():
     def __init__(self, share=False, server_name="127.0.0.1", server_port=7863):
         # TEST VARS
@@ -100,6 +98,14 @@ class Gradio_Interface():
             # 获取初始图片
             self.current_image = self.sam_tool.load_frame(self.img_path)
             with gr.Row():
+                with gr.Column():
+                    self.image_display = gr.Image(
+                        label="点击图片来标记位置",
+                        value=self.current_image,
+                        interactive=True,
+                        show_download_button=False
+                    )
+            with gr.Row():
                 with gr.Column():   
                     # 显示点击坐标信息
                     self.coordinate_info = gr.Textbox(
@@ -117,12 +123,7 @@ class Gradio_Interface():
                 
                 with gr.Column():
                     # 图片显示组件 1, 2
-                    self.image_display = gr.Image(
-                        label="点击图片来标记位置",
-                        value=self.current_image,
-                        interactive=True,
-                        show_download_button=False
-                    )
+                    
                     self.image_to_vlm = gr.Image(
                         label="VLM看到的图片",
                         value=None,
