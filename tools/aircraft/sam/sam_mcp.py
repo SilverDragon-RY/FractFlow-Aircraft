@@ -125,15 +125,17 @@ def draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=2):
     if len(boundary_coords[0]) > 0:
         img_array[boundary_coords[0], boundary_coords[1]] = color
     return img_array
-def find_largest_connected_component(mask):
+def find_point_connected_component(mask, point_x, point_y):
     """
-    找到mask中最大的非0联通区域，将其他联通区域置为0
+    找到mask中包含指定点的联通区域，将其他联通区域置为0
     
     Args:
         mask: 输入的mask数组
+        point_x: 点击点的x坐标
+        point_y: 点击点的y坐标
         
     Returns:
-        cleaned_mask: 只保留最大联通区域的mask
+        cleaned_mask: 只保留包含指定点的联通区域的mask
     """
     if mask is None or mask.size == 0:
         return mask
@@ -148,21 +150,28 @@ def find_largest_connected_component(mask):
         print(">>> 没有找到任何联通区域")
         return mask
     
-    # 计算每个联通区域的大小
-    component_sizes = []
-    for i in range(1, num_features + 1):
-        size = np.sum(labeled_mask == i)
-        component_sizes.append((size, i))
+    # 检查点击点是否在图像范围内
+    h, w = mask.shape
+    if not (0 <= point_x < w and 0 <= point_y < h):
+        print(f">>> 点击点({point_x}, {point_y})超出图像范围({w}, {h})")
+        return mask
     
-    # 找到最大的联通区域
-    largest_size, largest_label = max(component_sizes)
+    # 获取点击点所在的联通区域标签
+    target_label = labeled_mask[point_y, point_x]
     
-    print(f">>> 找到{num_features}个联通区域，最大区域大小: {largest_size}")
+    if target_label == 0:
+        print(f">>> 点击点({point_x}, {point_y})不在任何mask区域内")
+        return mask
     
-    # 创建新的mask，只保留最大联通区域
+    # 计算目标联通区域的大小
+    target_size = np.sum(labeled_mask == target_label)
+    
+    print(f">>> 找到{num_features}个联通区域，目标区域大小: {target_size}")
+    
+    # 创建新的mask，只保留包含点击点的联通区域
     cleaned_mask = np.zeros_like(mask)
-    largest_component_coords = labeled_mask == largest_label
-    cleaned_mask[largest_component_coords] = mask[largest_component_coords]
+    target_component_coords = labeled_mask == target_label
+    cleaned_mask[target_component_coords] = mask[target_component_coords]
     
     return cleaned_mask
 def center_crop_mask_region(image, mask, crop_size=1024):
@@ -217,28 +226,33 @@ def center_crop_mask_region(image, mask, crop_size=1024):
     half_width = actual_crop_width // 2
     half_height = actual_crop_height // 2
     
-    # 计算crop区域
-    start_x = max(0, center_x - half_width)
-    end_x = min(w, center_x + half_width)
-    start_y = max(0, center_y - half_height)
-    end_y = min(h, center_y + half_height)
+    # 计算crop区域，确保不超出图像边界
+    start_x = max(0, min(center_x - half_width, w - actual_crop_width))
+    end_x = min(w, start_x + actual_crop_width)
+    start_y = max(0, min(center_y - half_height, h - actual_crop_height))
+    end_y = min(h, start_y + actual_crop_height)
     
-    # 如果图像边界不够，调整中心位置
-    if end_x - start_x < actual_crop_width:
-        if start_x == 0:
-            end_x = min(w, actual_crop_width)
-        else:
-            start_x = max(0, w - actual_crop_width)
+    # 如果图像尺寸小于crop尺寸，调整到图像边界
+    if w < actual_crop_width:
+        start_x = 0
+        end_x = w
+        actual_crop_width = w
     
-    if end_y - start_y < actual_crop_height:
-        if start_y == 0:
-            end_y = min(h, actual_crop_height)
-        else:
-            start_y = max(0, h - actual_crop_height)
+    if h < actual_crop_height:
+        start_y = 0
+        end_y = h
+        actual_crop_height = h
     
+    # 检查裁剪区域有效性
+    if start_x >= end_x or start_y >= end_y:
+        print(f'>>> 裁剪区域无效: start_x={start_x}, end_x={end_x}, start_y={start_y}, end_y={end_y}')
+    if start_x < 0 or start_y < 0 or end_x > w or end_y > h:
+        print(f'>>> 裁剪区域超出边界: start_x={start_x}, end_x={end_x}, start_y={start_y}, end_y={end_y}')
+    
+
     # 执行crop
     cropped_image = image[start_y:end_y, start_x:end_x]
-    
+    Image.fromarray(cropped_image).save("./sam/tmp/cropped_image_before_padding.png")
     # 如果裁剪后的尺寸不足目标尺寸，进行padding
     if cropped_image.shape[0] < actual_crop_height or cropped_image.shape[1] < actual_crop_width:
         # 创建目标尺寸的空白图像
@@ -291,7 +305,7 @@ class SAM_TOOL:
         return img
     
     # 图片+遮罩 = 目标图片
-    def apply_mask_overlay(self, image, mask, alpha=0.3):
+    def apply_mask_overlay(self, image, mask, point_x, point_y, alpha=0.3):
         if mask is None:
             return image
         img_array = image.copy()
@@ -305,8 +319,8 @@ class SAM_TOOL:
         else:
             return image  # 不是3维数组，返回原图
         
-        # 找到最大联通区域并清理mask
-        cleaned_mask = find_largest_connected_component(mask)
+        # 找到点击点所在的联通区域并清理mask
+        cleaned_mask = find_point_connected_component(mask, point_x, point_y)
         
         # 应用绿色遮罩
         img_array, mask_3d = apply_green_overlay(img_array, cleaned_mask, alpha)
@@ -338,7 +352,7 @@ class SAM_TOOL:
         #yield loading_image, f"正在应用mask叠加...\n当前点击坐标: ({x}, {y})"
         #await asyncio.sleep(1)
         
-        img_array, boundary = self.apply_mask_overlay(img_array, mask)
+        img_array, boundary = self.apply_mask_overlay(img_array, mask, x, y)
         
         # 绘制标记点
         #yield loading_image, f"正在绘制标记点...\n当前点击坐标: ({x}, {y})"
