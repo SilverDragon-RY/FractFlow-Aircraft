@@ -10,6 +10,7 @@ import threading
 from .sam_utils import SAM_tool, SAMClient
 import gradio as gr
 import asyncio
+from scipy.ndimage import label
 
 # helper functions
 def create_loading_image(original_img):
@@ -124,6 +125,46 @@ def draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=2):
     if len(boundary_coords[0]) > 0:
         img_array[boundary_coords[0], boundary_coords[1]] = color
     return img_array
+def find_largest_connected_component(mask):
+    """
+    找到mask中最大的非0联通区域，将其他联通区域置为0
+    
+    Args:
+        mask: 输入的mask数组
+        
+    Returns:
+        cleaned_mask: 只保留最大联通区域的mask
+    """
+    if mask is None or mask.size == 0:
+        return mask
+    
+    # 创建二值化mask（非0的地方为True）
+    binary_mask = mask != 0
+    
+    # 找到所有联通区域
+    labeled_mask, num_features = label(binary_mask)
+    
+    if num_features == 0:
+        print(">>> 没有找到任何联通区域")
+        return mask
+    
+    # 计算每个联通区域的大小
+    component_sizes = []
+    for i in range(1, num_features + 1):
+        size = np.sum(labeled_mask == i)
+        component_sizes.append((size, i))
+    
+    # 找到最大的联通区域
+    largest_size, largest_label = max(component_sizes)
+    
+    print(f">>> 找到{num_features}个联通区域，最大区域大小: {largest_size}")
+    
+    # 创建新的mask，只保留最大联通区域
+    cleaned_mask = np.zeros_like(mask)
+    largest_component_coords = labeled_mask == largest_label
+    cleaned_mask[largest_component_coords] = mask[largest_component_coords]
+    
+    return cleaned_mask
 def center_crop_mask_region(image, mask, crop_size=1024):
     """
     围绕mask非0值的中心进行center crop并保存
@@ -147,41 +188,69 @@ def center_crop_mask_region(image, mask, crop_size=1024):
     center_y = int(np.mean(mask_coords[0]))
     center_x = int(np.mean(mask_coords[1]))
     
-    half_size = crop_size // 2
+    # 计算mask的实际尺寸
+    min_y, max_y = np.min(mask_coords[0]), np.max(mask_coords[0])
+    min_x, max_x = np.min(mask_coords[1]), np.max(mask_coords[1])
+    mask_height = max_y - min_y + 1
+    mask_width = max_x - min_x + 1
+    
+    # 获取原图尺寸
     h, w = image.shape[:2]
     
+    # 分别计算x和y维度的实际crop尺寸
+    # 处理x维度(width)
+    if mask_width > crop_size:
+        expanded_width = int(mask_width * 1.2)
+        actual_crop_width = min(expanded_width, w)
+        print(f'>>> mask宽度({mask_width})大于crop_size({crop_size})，x维度扩展到{actual_crop_width}')
+    else:
+        actual_crop_width = min(crop_size, w)
+    
+    # 处理y维度(height)
+    if mask_height > crop_size:
+        expanded_height = int(mask_height * 1.2)
+        actual_crop_height = min(expanded_height, h)
+        print(f'>>> mask高度({mask_height})大于crop_size({crop_size})，y维度扩展到{actual_crop_height}')
+    else:
+        actual_crop_height = min(crop_size, h)
+    
+    half_width = actual_crop_width // 2
+    half_height = actual_crop_height // 2
+    
     # 计算crop区域
-    start_x = max(0, center_x - half_size)
-    end_x = min(w, center_x + half_size)
-    start_y = max(0, center_y - half_size)
-    end_y = min(h, center_y + half_size)
+    start_x = max(0, center_x - half_width)
+    end_x = min(w, center_x + half_width)
+    start_y = max(0, center_y - half_height)
+    end_y = min(h, center_y + half_height)
     
     # 如果图像边界不够，调整中心位置
-    if end_x - start_x < crop_size:
+    if end_x - start_x < actual_crop_width:
         if start_x == 0:
-            end_x = min(w, crop_size)
+            end_x = min(w, actual_crop_width)
         else:
-            start_x = max(0, w - crop_size)
+            start_x = max(0, w - actual_crop_width)
     
-    if end_y - start_y < crop_size:
+    if end_y - start_y < actual_crop_height:
         if start_y == 0:
-            end_y = min(h, crop_size)
+            end_y = min(h, actual_crop_height)
         else:
-            start_y = max(0, h - crop_size)
+            start_y = max(0, h - actual_crop_height)
     
     # 执行crop
     cropped_image = image[start_y:end_y, start_x:end_x]
     
-    # 如果裁剪后的尺寸不足crop_size x crop_size，进行padding
-    if cropped_image.shape[0] < crop_size or cropped_image.shape[1] < crop_size:
-        # 创建crop_size x crop_size的空白图像
-        padded_img = np.zeros((crop_size, crop_size, 3), dtype=np.uint8)
+    # 如果裁剪后的尺寸不足目标尺寸，进行padding
+    if cropped_image.shape[0] < actual_crop_height or cropped_image.shape[1] < actual_crop_width:
+        # 创建目标尺寸的空白图像
+        padded_img = np.zeros((actual_crop_height, actual_crop_width, 3), dtype=np.uint8)
         # 计算padding位置
-        pad_y = (crop_size - cropped_image.shape[0]) // 2
-        pad_x = (crop_size - cropped_image.shape[1]) // 2
+        pad_y = (actual_crop_height - cropped_image.shape[0]) // 2
+        pad_x = (actual_crop_width - cropped_image.shape[1]) // 2
         padded_img[pad_y:pad_y+cropped_image.shape[0], 
                   pad_x:pad_x+cropped_image.shape[1]] = cropped_image
         cropped_image = padded_img
+    # save cropped_image to ./sam/tmp/cropped_image.png
+    Image.fromarray(cropped_image).save("./sam/tmp/cropped_image.png")
     return cropped_image
 
 # core
@@ -236,21 +305,15 @@ class SAM_TOOL:
         else:
             return image  # 不是3维数组，返回原图
         
+        # 找到最大联通区域并清理mask
+        cleaned_mask = find_largest_connected_component(mask)
+        
         # 应用绿色遮罩
-        img_array, mask_3d = apply_green_overlay(img_array, mask, alpha)
-        # 绘制红色边界框
-        overlay_region = mask_3d != 0
-        bbox_img = draw_bounding_box(image, overlay_region, thickness=10, color=[255, 0, 0])
+        img_array, mask_3d = apply_green_overlay(img_array, cleaned_mask, alpha)
         # 绘制红色边缘轮廓
-        boundary_img = draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=10)
-        # 对boundary_img进行center crop并保存
-        #if self.mask_type == "mask":
-        #    return img_array
-        #if self.mask_type == "bbox":
-        #    return center_crop_mask_region(bbox_img, mask, crop_size=self.crop_size)
-        #if self.mask_type == "boundary":
-        #    return center_crop_mask_region(boundary_img, mask, crop_size=self.crop_size)
-        return img_array, center_crop_mask_region(boundary_img, mask, crop_size=self.crop_size)
+        boundary_img = draw_mask_boundary(image, cleaned_mask, color=[255, 0, 0], thickness=10)
+        
+        return img_array, center_crop_mask_region(boundary_img, cleaned_mask, crop_size=self.crop_size)
 
     # 核心检测 - 注意异步！
     async def detect(self, image, points:gr.SelectData):
