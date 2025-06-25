@@ -5,24 +5,10 @@ import os
 import glob
 import time
 import threading
+from functools import partial
 
 from sam.sam_mcp import SAM_TOOL
 from safety_check.safety_agent import Safety_Agent
-
-# 配置固定的图片路径
-# 请根据实际情况修改路径
-IMAGE_PATH = "./tmp/camera/Test1.png"
-MASK_DIR = "./tmp/individual_masks"  # mask文件夹路径
-RELOAD_TRIGGER_FILE = "./tmp/reload_trigger.txt"  # 重新加载触发文件
-
-# 存储最新点击坐标、原始图片和masks
-masks = []  # 存储所有mask数据
-mask_files = []  # 存储mask文件名
-
-# Gradio组件的全局引用
-image_display_ref = None
-coordinate_info_ref = None
-client = None
 
 def trigger_external_reload():
     """外部进程调用此函数来触发重新加载
@@ -94,6 +80,7 @@ class Gradio_Interface():
         self.share = share
         self.server_name = server_name
         self.server_port = server_port
+        self.current_image = None
 
         # --- init all components ---
         self.sam_tool = SAM_TOOL(mask_type="boundary", crop_size=1024)
@@ -111,7 +98,7 @@ class Gradio_Interface():
             gr.Markdown("# 图片点击坐标标记器")
             gr.Markdown("**外部进程重新加载**: 创建文件 `reload_trigger.txt` 可触发重新加载")
             # 获取初始图片
-            initial_image = self.sam_tool.load_frame(self.img_path)
+            self.current_image = self.sam_tool.load_frame(self.img_path)
             with gr.Row():
                 with gr.Column():   
                     # 显示点击坐标信息
@@ -121,25 +108,32 @@ class Gradio_Interface():
                         lines=6,
                         interactive=False
                     )
-                    # 清除按钮
-                    self.clear_btn = gr.Button("清除标记点")
                     # 重新加载按钮
-                    self.reload_btn = gr.Button("重新加载图片和mask")     
+                    self.reload_btn = gr.Button("重新加载图片（下一帧）")     
                     # 外部触发重新加载按钮（用于测试）
                     self.external_reload_btn = gr.Button("模拟外部触发重新加载")
+                    # VLM 按钮
+                    self.vlm_btn = gr.Button("模拟VLM分析")
                 
                 with gr.Column():
-                    # 图片显示组件
+                    # 图片显示组件 1, 2
                     self.image_display = gr.Image(
                         label="点击图片来标记位置",
-                        value=initial_image,
+                        value=self.current_image,
                         interactive=True,
+                        show_download_button=False
+                    )
+                    self.image_to_vlm = gr.Image(
+                        label="VLM看到的图片",
+                        value=None,
+                        interactive=False,
                         show_download_button=False
                     )
             
             # 保存组件引用
             self.image_display_ref = self.image_display
             self.coordinate_info_ref = self.coordinate_info
+            self.image_to_vlm_ref = self.image_to_vlm
             
             # 定时检查重新加载触发器
             def check_and_reload():
@@ -158,17 +152,13 @@ class Gradio_Interface():
             self.image_display.select(
                 fn=self.sam_tool.detect,
                 inputs=[self.image_display],
-                outputs=[self.image_display, self.coordinate_info]
+                outputs=[self.image_display, self.image_to_vlm, self.coordinate_info]
             )
             
-            #clear_btn.click(
-            #    fn=clear_points,
-            #    outputs=[image_display, coordinate_info]
-            #)
-            
             self.reload_btn.click(
-                fn=self.sam_tool.load_frame,
-                outputs=[self.image_display, self.coordinate_info]
+                fn=lambda: self.sam_tool.load_frame(self.img_path),
+                inputs=None,
+                outputs=[self.image_display]
             )
             
             self.external_reload_btn.click(

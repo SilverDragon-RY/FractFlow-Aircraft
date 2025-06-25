@@ -189,13 +189,16 @@ class SAM_TOOL:
     def __init__(self, mask_type="boundary", crop_size=1024):
         load_dotenv()
         # MCP server
-        mcp = FastMCP("sam")
+        mcp = FastMCP("SAM")
+        #mcp.tool(self.detect)
         # SAM Client
         self.client = SAMClient(server_url="http://10.30.58.120:5000")
         # 遮罩方法
         self.mask_type = mask_type # boundary, mask, bbox
         # 返回大小
         self.crop_size = crop_size
+        # 当前图片
+        self.img = None
 
     # 加载单张图片 - 可无损替换为加载视频帧
     def load_frame(self, img_pth):
@@ -214,7 +217,8 @@ class SAM_TOOL:
             # 其他格式转换为RGB
             img = img.convert('RGB')
         # 保存到np array
-        # img = np.array(img)
+        img = np.array(img)
+        self.img = img
         return img
     
     # 图片+遮罩 = 目标图片
@@ -240,16 +244,17 @@ class SAM_TOOL:
         # 绘制红色边缘轮廓
         boundary_img = draw_mask_boundary(image, mask, color=[255, 0, 0], thickness=10)
         # 对boundary_img进行center crop并保存
-        if self.mask_type == "mask":
-            return img_array
-        if self.mask_type == "bbox":
-            return center_crop_mask_region(bbox_img, mask, crop_size=self.crop_size)
-        if self.mask_type == "boundary":
-            return center_crop_mask_region(boundary_img, mask, crop_size=self.crop_size)
+        #if self.mask_type == "mask":
+        #    return img_array
+        #if self.mask_type == "bbox":
+        #    return center_crop_mask_region(bbox_img, mask, crop_size=self.crop_size)
+        #if self.mask_type == "boundary":
+        #    return center_crop_mask_region(boundary_img, mask, crop_size=self.crop_size)
+        return img_array, center_crop_mask_region(boundary_img, mask, crop_size=self.crop_size)
 
-    # 核心检测时间 - 注意异步！
-    #@mcp.tool()
+    # 核心检测 - 注意异步！
     async def detect(self, image, points:gr.SelectData):
+        image = self.img
         img_array = image.copy()
         image = Image.fromarray(image)
         # 获取点击的坐标 - 支持点击或普通[x,y]
@@ -259,18 +264,18 @@ class SAM_TOOL:
             x, y = points
         loading_image = create_loading_image(img_array)
 
-        yield loading_image, f"正在识别...\n当前识别坐标: ({x}, {y})"
-        await asyncio.sleep(0)
+        #yield loading_image, f"正在识别...\n当前识别坐标: ({x}, {y})"
+        #await asyncio.sleep(1)
         # 调用SAM模型
-        yield loading_image, f"正在调用SAM模型进行分割...\n当前点击坐标: ({x}, {y})"
-        await asyncio.sleep(0)
+        #yield loading_image, f"正在调用SAM模型进行分割...\n当前点击坐标: ({x}, {y})"
+        #await asyncio.sleep(1)
         mask = SAM_tool(self.client, image, [[x, y]])
         
         # 处理图像
-        yield loading_image, f"正在应用mask叠加...\n当前点击坐标: ({x}, {y})"
-        await asyncio.sleep(0)
+        #yield loading_image, f"正在应用mask叠加...\n当前点击坐标: ({x}, {y})"
+        #await asyncio.sleep(1)
         
-        img_array = self.apply_mask_overlay(img_array, mask)
+        img_array, boundary = self.apply_mask_overlay(img_array, mask)
         
         # 绘制标记点
         #yield loading_image, f"正在绘制标记点...\n当前点击坐标: ({x}, {y})"
@@ -284,4 +289,9 @@ class SAM_TOOL:
         #                img_array[ny, nx] = [255, 0, 0]  # 红色标记
         
         # 返回最终结果
-        yield img_array, f"处理完成\n当前点击坐标: ({x}, {y})"
+        # self.masked_img = img_array
+        return img_array, boundary, f"处理完成\n当前点击坐标: ({x}, {y})"
+
+    #async def detect_tool(self, image, points:gr.SelectData):
+    #    _, boundary, _ = self.detect(image, points)
+    #    return boundary
