@@ -174,7 +174,7 @@ def find_point_connected_component(mask, point_x, point_y):
     cleaned_mask[target_component_coords] = mask[target_component_coords]
     
     return cleaned_mask
-def center_crop_mask_region(image, mask, crop_size=1024):
+def center_crop_mask_region(image, mask, crop_size):
     """
     围绕mask非0值的中心进行center crop并保存
     
@@ -252,7 +252,7 @@ def center_crop_mask_region(image, mask, crop_size=1024):
 
     # 执行crop
     cropped_image = image[start_y:end_y, start_x:end_x]
-    Image.fromarray(cropped_image).save("./sam/tmp/cropped_image_before_padding.png")
+    # Image.fromarray(cropped_image).save("./sam/tmp/cropped_image_before_padding.png")
     # 如果裁剪后的尺寸不足目标尺寸，进行padding
     if cropped_image.shape[0] < actual_crop_height or cropped_image.shape[1] < actual_crop_width:
         # 创建目标尺寸的空白图像
@@ -263,13 +263,12 @@ def center_crop_mask_region(image, mask, crop_size=1024):
         padded_img[pad_y:pad_y+cropped_image.shape[0], 
                   pad_x:pad_x+cropped_image.shape[1]] = cropped_image
         cropped_image = padded_img
-    # save cropped_image to ./sam/tmp/cropped_image.png
-    Image.fromarray(cropped_image).save("./sam/tmp/cropped_image.png")
+    
     return cropped_image
 
 # core
 class SAM_TOOL:
-    def __init__(self, mask_type="boundary", crop_size=1024):
+    def __init__(self, mask_type="boundary", crop_size=512):
         load_dotenv()
         # MCP server
         mcp = FastMCP("SAM")
@@ -354,6 +353,9 @@ class SAM_TOOL:
         
         img_array, boundary = self.apply_mask_overlay(img_array, mask, x, y)
         
+        # save cropped_image to ./sam/tmp/cropped_image.png
+        Image.fromarray(boundary).save("./sam/tmp/cropped_image.png")
+
         # 绘制标记点
         #yield loading_image, f"正在绘制标记点...\n当前点击坐标: ({x}, {y})"
         #h, w = img_array.shape[:2]

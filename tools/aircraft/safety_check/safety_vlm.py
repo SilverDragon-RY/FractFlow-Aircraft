@@ -55,7 +55,7 @@ def load_image(image_path: str, size_limit: tuple[int, int] = (512, 512)) -> tup
     base64_image = encode_image(image, size_limit)
     return base64_image, meta_info
 
-@mcp.tool()
+# @mcp.tool()
 async def Safety_VLM(image_path: str) -> str:
     '''
     This tool uses Qwen-VL-Plus model to analyse the safety level of a landing spot from a given masked image input.
@@ -77,7 +77,40 @@ async def Safety_VLM(image_path: str) -> str:
         base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
     )
     # --- --- ---
-    prompt = "请分析图中红色bounding box区域的降落安全性。"
+    prompt = "请分析图中红色boundary区域的是否属于标准停机坪。"
+    completion = client.chat.completions.create(
+        model="qwen-vl-max",  # 此处以qwen-vl-plus为例，可按需更换模型名称。模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
+        messages=[{"role": "user","content": [
+                {"type": "text","text": prompt},
+                {"type": "image_url",
+                "image_url": {"url": f'data:image/png;base64,{base64_image}'}}
+                ]}]
+    )
+    return completion.choices[0].message.content
+
+@mcp.tool()
+async def Safety_VLM_Local(image_path: str) -> str:
+    '''
+    This tool uses Qwen2.5-VL-7B-Instruct model to analyse the safety level of a landing spot from a given masked image input.
+    
+    Args:
+        image_path (str): Full path to the image file to process. The path should be accessible
+                          by the system and point to a valid image file (e.g., JPG, PNG).
+
+    Returns:
+        str: A safety level (Green, Yellow, Red) and its reasoning.
+    '''
+    image_path = normalize_path(image_path)
+    base64_image, meta_info = load_image(image_path, (512, 512))
+
+    # --- TBC ---
+    client = OpenAI(
+        # 若没有配置环境变量，请用百炼API Key将下行替换为：api_key="sk-xxx",
+        api_key=os.getenv('QWEN_API_KEY'),
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    )
+    # --- --- ---
+    prompt = "请分析图中红色boundary区域的是否属于标准停机坪。"
     completion = client.chat.completions.create(
         model="qwen-vl-max",  # 此处以qwen-vl-plus为例，可按需更换模型名称。模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
         messages=[{"role": "user","content": [

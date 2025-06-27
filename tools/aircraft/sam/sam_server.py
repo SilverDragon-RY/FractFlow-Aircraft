@@ -23,8 +23,8 @@ app = Flask(__name__)
 def initialize_sam():
     # 下载SAM模型权重文件到本地
     # 这里使用vit_h模型，您可以根据需要选择其他版本
-    model_type = "vit_h"
-    sam_checkpoint = "./segment-anything/sam_vit_h_4b8939.pth"  # 需要下载对应的权重文件
+    model_type = "vit_b"
+    sam_checkpoint = "./segment-anything/sam_vit_b_01ec64.pth"  # 需要下载对应的权重文件
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
