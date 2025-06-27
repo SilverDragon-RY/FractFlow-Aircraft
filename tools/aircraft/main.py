@@ -8,10 +8,10 @@ import threading
 from functools import partial
 
 from sam.sam_mcp import SAM_TOOL
-from safety_check.safety_agent import Safety_Agent
+from safety_check.safty_mcp import Safety_VLM_Local
 
 class Gradio_Interface():
-    def __init__(self, share=False, server_name="127.0.0.1", server_port=7863):
+    def __init__(self, share=True, server_name="127.0.0.1", server_port=7863):
         # TEST VARS
         self.img_path = "./test.png"
 
@@ -24,8 +24,8 @@ class Gradio_Interface():
         # --- init all components ---
         self.sam_tool = SAM_TOOL(mask_type="boundary", crop_size=256)
         print("SAM Component Loaded !")
-        self.safety_agent = Safety_Agent()
-        print("Safety VLM Component Loaded !")
+        # self.safety_agent = Safety_Agent()
+        # print("Safety VLM Component Loaded !")
         # ---------------------------
 
         # init gradio IO after all other components
@@ -92,7 +92,7 @@ class Gradio_Interface():
             )
             
             self.safety_vlm_btn.click(
-                fn=self.safety_agent.run_local,
+                fn=Safety_VLM_Local,
                 inputs=None,
                 outputs=[self.coordinate_info]
             )

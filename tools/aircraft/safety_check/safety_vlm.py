@@ -2,10 +2,15 @@ from typing import List, Dict, Optional, Any
 import os
 from mcp.server.fastmcp import FastMCP
 from openai import OpenAI
+
+from qwen.qwen_utils import qwen_tool, QwenClient
+
 from dotenv import load_dotenv
 load_dotenv()
 # Initialize FastMCP server
 mcp = FastMCP("Safety_VLM")
+
+client = QwenClient(server_url="http://10.30.58.120:5001")
 
 from PIL import Image
 import base64
@@ -101,25 +106,13 @@ async def Safety_VLM_Local(image_path: str) -> str:
         str: A safety level (Green, Yellow, Red) and its reasoning.
     '''
     image_path = normalize_path(image_path)
-    base64_image, meta_info = load_image(image_path, (512, 512))
+    # base64_image, meta_info = load_image(image_path, (512, 512))
 
-    # --- TBC ---
-    client = OpenAI(
-        # 若没有配置环境变量，请用百炼API Key将下行替换为：api_key="sk-xxx",
-        api_key=os.getenv('QWEN_API_KEY'),
-        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-    )
-    # --- --- ---
-    prompt = "请分析图中红色boundary区域的是否属于标准停机坪。"
-    completion = client.chat.completions.create(
-        model="qwen-vl-max",  # 此处以qwen-vl-plus为例，可按需更换模型名称。模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
-        messages=[{"role": "user","content": [
-                {"type": "text","text": prompt},
-                {"type": "image_url",
-                "image_url": {"url": f'data:image/png;base64,{base64_image}'}}
-                ]}]
-    )
-    return completion.choices[0].message.content
+    image = Image.open(image_path)
+    text_prompt = "请分析图中红色boundary区域的是否属于标准停机坪。"
+    result = await qwen_tool(client, image, text_prompt, max_new_tokens=1024)
+    return result
+    # return completion.choices[0].message.content
 
 if __name__ == "__main__":
     # Initialize and run the server
