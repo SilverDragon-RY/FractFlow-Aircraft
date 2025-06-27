@@ -134,7 +134,7 @@ async def Safety_VLM_Local() -> str:
             "landing_spot_type": result["landing_spot_type"],
             "safety_level": result["safety_level"],
             "safety_reasoning": result["safety_reasoning"]
-            }, indent=2)
+            }, indent=2, ensure_ascii=False)
 
 
 if __name__ == "__main__":
