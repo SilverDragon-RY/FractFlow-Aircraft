@@ -45,7 +45,7 @@ class QwenClient:
         image = Image.open(image_path)
         return self.encode_image(image)
     
-    async def generate_text(self, image, text_prompt="Describe this image.", system_prompt="You are a helpful assistant.", max_new_tokens=128):
+    async def generate_text(self, image64, text_prompt="Describe this image.", system_prompt="You are a helpful assistant.", max_new_tokens=128):
         """
         发送图像和文本到服务器，获取生成的文本
         
@@ -59,19 +59,9 @@ class QwenClient:
             生成的文本字符串，失败时返回None
         """
         try:
-            # 处理图像输入
-            if isinstance(image, str):
-                # 如果是文件路径
-                image_base64 = self.encode_image_from_path(image)
-            elif isinstance(image, Image.Image):
-                # 如果是PIL图像对象
-                image_base64 = self.encode_image(image)
-            else:
-                raise ValueError("image参数必须是文件路径字符串或PIL.Image对象")
-            
             # 准备请求数据
             data = {
-                "image": image_base64,
+                "image": image64,
                 "text": text_prompt,
                 "system_prompt": system_prompt,
                 "max_new_tokens": max_new_tokens
@@ -122,13 +112,13 @@ def normalize_path(path: str) -> str:
         
     return expanded_path
 
-async def qwen_tool(client: QwenClient, image, text_prompt="Describe this image.", system_prompt="You are a helpful assistant.", max_new_tokens=128):
+async def qwen_tool(client: QwenClient, image64, text_prompt="Describe this image.", system_prompt="You are a helpful assistant.", max_new_tokens=128):
     """
     Qwen工具函数
     
     Args:
         client: QwenClient实例
-        image: 图像（文件路径或PIL.Image对象）
+        image64: 图像base64编码
         text_prompt: 用户文本提示
         system_prompt: 系统提示
         max_new_tokens: 最大生成token数
@@ -147,7 +137,7 @@ async def qwen_tool(client: QwenClient, image, text_prompt="Describe this image.
         return None
 
     # 执行文本生成
-    output_text = await client.generate_text(image, text_prompt, system_prompt, max_new_tokens)
+    output_text = await client.generate_text(image64, text_prompt, system_prompt, max_new_tokens)
     return output_text
 
 if __name__ == "__main__":
