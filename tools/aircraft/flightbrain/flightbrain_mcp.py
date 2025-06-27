@@ -350,81 +350,81 @@ async def get_aircraft_state() -> str:
         "aircraft_state": aircraft.to_dict()
     }, indent=2)
 
-@mcp.tool()
-async def analyze_flight_situation(image_path: str) -> str:
-    """
-    Analyze the flight situation using visual input.
-    
-    Args:
-        image_path (str): Path to the image showing aircraft and landing area
-        
-    Returns:
-        str: Detailed analysis of the flight situation
-    """
-    image_path = normalize_path(image_path)
-    base64_image, meta_info = load_image(image_path, (512, 512))
-
-    client = OpenAI(
-        api_key=os.getenv('QWEN_API_KEY'),
-        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-    )
-    
-    prompt = """请分析图中飞行器与降落区域的相对位置关系，并详细描述：
-1. 飞行器与停机坪的相对距离（近、中、远）和方位（正上方、前方、侧方等）
-2. 下降路径上是否存在障碍物（建筑物、树木、电线等）
-3. 停机坪周围的环境状况（障碍物分布、空间开阔程度）
-4. 飞行器当前的离地高度（过高、适中、过低）
-5. 建议的下一步操作（继续下降、调整位置、保持悬停等）
-
-请以结构化的方式输出分析结果。"""
-
-    completion = client.chat.completions.create(
-        model="qwen-vl-max",
-        messages=[{"role": "user", "content": [
-            {"type": "text", "text": prompt},
-            {"type": "image_url", "image_url": {"url": f'data:image/png;base64,{base64_image}'}}
-        ]}]
-    )
+#@mcp.tool()
+#async def analyze_flight_situation(image_path: str) -> str:
+#    """
+#    Analyze the flight situation using visual input.
+#    
+#    Args:
+#        image_path (str): Path to the image showing aircraft and landing area
+#        
+#    Returns:
+#        str: Detailed analysis of the flight situation
+#    """
+#    image_path = normalize_path(image_path)
+#    base64_image, meta_info = load_image(image_path, (512, 512))#
+#
+#    client = OpenAI(
+#        api_key=os.getenv('QWEN_API_KEY'),
+#        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+#    )
+#    
+#    prompt = """请分析图中飞行器与降落区域的相对位置关系，并详细描述：
+#1. 飞行器与停机坪的相对距离（近、中、远）和方位（正上方、前方、侧方等）
+#2. 下降路径上是否存在障碍物（建筑物、树木、电线等）
+#3. 停机坪周围的环境状况（障碍物分布、空间开阔程度）
+#4. 飞行器当前的离地高度（过高、适中、过低）
+#5. 建议的下一步操作（继续下降、调整位置、保持悬停等）
+#
+#请以结构化的方式输出分析结果。"""
+#
+#    completion = client.chat.completions.create(
+#        model="qwen-vl-max",
+#        messages=[{"role": "user", "content": [
+#            {"type": "text", "text": prompt},
+#            {"type": "image_url", "image_url": {"url": f'data:image/png;base64,{base64_image}'}}
+#        ]}]
+#    )
     
     # Update aircraft safety status based on analysis
-    response = completion.choices[0].message.content
+#    response = completion.choices[0].message.content
     
     # Simple heuristic to update safety status based on keywords in the response
-    if any(word in response.lower() for word in ["危险", "障碍", "unsafe", "danger"]):
-        aircraft.safety_status = "unsafe"
-    elif any(word in response.lower() for word in ["注意", "caution", "warning"]):
-        aircraft.safety_status = "caution"
-    else:
-        aircraft.safety_status = "safe"
+#    if any(word in response.lower() for word in ["危险", "障碍", "unsafe", "danger"]):
+#        aircraft.safety_status = "unsafe"
+#    elif any(word in response.lower() for word in ["注意", "caution", "warning"]):
+#        aircraft.safety_status = "caution"
+#    else:
+#        aircraft.safety_status = "safe"
     
-    return response
+#    return response
 
-@mcp.tool()
-async def read_latest_safety_result() -> str:
-    """
-    Read the latest safety analysis result from file.
-    
-    Returns:
-        str: JSON string containing the latest safety analysis result
-    """
-    try:
-        latest_file = "./safety_check/latest_safety_result.json"
-        latest_file = normalize_path(latest_file)
-        
-        if os.path.exists(latest_file):
-            with open(latest_file, 'r', encoding='utf-8') as f:
-                result_data = json.load(f)
-            return json.dumps(result_data, ensure_ascii=False, indent=2)
-        else:
-            return json.dumps({
-                "status": "no_result",
-                "message": "No safety analysis result found. Please run safety analysis first."
-            })
-    except Exception as e:
-        return json.dumps({
-            "status": "error",
-            "message": f"Error reading safety result: {str(e)}"
-        })
+#@mcp.tool()
+#async def read_latest_safety_result() -> str:
+#    """
+#    Read the latest safety analysis result from file.
+#    
+#    Returns:
+#        str: JSON string containing the latest safety analysis result
+#    """
+#    try:
+#        latest_file = "./safety_check/latest_safety_result.json"
+#        latest_file = normalize_path(latest_file)
+#        
+#        if os.path.exists(latest_file):
+#            with open(latest_file, 'r', encoding='utf-8') as f:
+#                result_data = json.load(f)
+#            return json.dumps(result_data, ensure_ascii=False, indent=2)
+#        else:
+#            return json.dumps({
+#                "status": "no_result",
+#                "message": "No safety analysis result found. Please run safety analysis first."
+#            })
+#    except Exception as e:
+#        return json.dumps({
+#            "status": "error",
+#            "message": f"Error reading safety result: {str(e)}"
+#        })
 
 if __name__ == "__main__":
     mcp.run(transport='stdio') 

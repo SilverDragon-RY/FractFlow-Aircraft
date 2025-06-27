@@ -7,16 +7,19 @@ os.sys.path.append("/home/bld/dyx/FractFlow-Aircraft/tools/aircraft")
 from qwen.qwen_utils import qwen_tool, QwenClient
 
 from dotenv import load_dotenv
+
+
+from PIL import Image
+import base64
+import io
+import json
+
+
 load_dotenv()
 # Initialize FastMCP server
 mcp = FastMCP("Safety_VLM")
 
 client = QwenClient(server_url="http://10.30.58.120:5001")
-
-from PIL import Image
-import base64
-import io
-
 qwen_client = QwenClient(server_url="http://10.30.58.120:5001")
 
 def normalize_path(path: str) -> str:
@@ -43,10 +46,43 @@ def load_image(image_path: str, size_limit: tuple[int, int] = (512, 512)) -> tup
     base64_image = encode_image(image, size_limit)
     return base64_image, meta_info
 
+def parse_result(text: str):
+    content = text.find("方框内容识别")
+    level = text.find("评估结果")
+    reasoning = text.find("核心理由")
+    result = {
+        "complete": 0,
+        "landing_spot_type": "",
+        "safety_level": "",
+        "safety_reasoning": ""
+    }
+    if content == -1 or level == -1 or reasoning == -1:
+        return result
+    else:
+        result["complete"] = 1
+    for i in range(content+6, len(text)):
+        if text[i] == "\n":
+            break
+        if text[i] != "：" and text[i] != ":":
+            result["landing_spot_type"] += text[i]
+    for i in range(level+4, len(text)):
+        if text[i] == "\n":
+            break
+        if text[i] != "：" and text[i] != ":":
+            result["safety_level"] += text[i]
+    for i in range(reasoning+4, len(text)):
+        if text[i] == "\n":
+            break
+        if text[i] != "：" and text[i] != ":":
+            result["safety_reasoning"] += text[i]
+    return result
+    
+
+
 @mcp.tool()
 async def Safety_VLM_Local() -> str:
     '''
-    This tool uses Qwen2.5-VL-7B-Instruct model to analyse the safety level of a landing spot from a given masked image input.
+    This tool uses Qwen2.5-VL-7B-Instruct model to analyse the landing safety level of the marked landing spot in current sight.
     
     Args:
         None
@@ -74,11 +110,11 @@ async def Safety_VLM_Local() -> str:
 - 进近/撤离空间是否清晰
 
 # 输出格式
-- **方框内容识别：** [简短描述]
-- **评估结果：** [适合降落/谨慎降落/不适合降落]
-- **核心理由：** [项目符号列出关键依据]
-- **潜在风险与建议：** [风险点和建议]
-- **限制声明：** “最终的飞行安全始终由操作飞行模拟器的用户（飞行员）负责”
+- #方框内容识别：[简短描述]
+- #评估结果：[适合降落/谨慎降落/不适合降落]
+- #核心理由：[项目符号列出关键依据]
+- #潜在风险与建议：[风险点和建议]
+- #限制声明：“最终的飞行安全始终由操作飞行模拟器的用户（飞行员）负责”
 """
 
     image_path = "./sam/tmp/cropped_image.png"
@@ -87,7 +123,19 @@ async def Safety_VLM_Local() -> str:
 
     text_prompt = "请分析图片："
     result = await qwen_tool(qwen_client, base64_image, text_prompt, SYSTEM_PROMPT_LOCAL, max_new_tokens=1024)
-    return result
+    print(result)
+    result = parse_result(result)
+    while True:
+        if result["complete"] == 0:
+            result = await qwen_tool(qwen_client, base64_image, text_prompt, SYSTEM_PROMPT_LOCAL, max_new_tokens=1024)
+        else:
+            print(result)
+            return json.dumps({
+            "landing_spot_type": result["landing_spot_type"],
+            "safety_level": result["safety_level"],
+            "safety_reasoning": result["safety_reasoning"]
+            }, indent=2)
+
 
 if __name__ == "__main__":
     # Initialize and run the server

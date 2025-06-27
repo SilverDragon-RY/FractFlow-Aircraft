@@ -43,7 +43,7 @@ class FlightBrain_Agent(ToolTemplate):
 - 如果情况不明确 → 调用hover工具保持安全
 
 # 重要
-每次必须选择并调用一个飞行操作工具，这样才能输出相应的print内容。
+每次仅生成一个决策（如：上升n米，并向前m米），然后根据决策调用相应工具。
 """
     
     TOOLS = [
