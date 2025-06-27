@@ -14,7 +14,7 @@ sys.path.append(project_root)
 # from FractFlow.tool_template import ToolTemplate
 from aircraft_tool_template import AircraftToolTemplate
 
-from qwen.qwen_vl import qwen_tool, QwenClient
+from qwen.qwen_utils import qwen_tool, QwenClient
 
 class Safety_Agent(AircraftToolTemplate):
     """Landing Safety Checking Tool using ToolTemplate"""

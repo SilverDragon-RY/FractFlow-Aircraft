@@ -22,7 +22,7 @@ class Gradio_Interface():
         self.current_image = None
 
         # --- init all components ---
-        self.sam_tool = SAM_TOOL(mask_type="boundary", crop_size=1024)
+        self.sam_tool = SAM_TOOL(mask_type="boundary", crop_size=256)
         print("SAM Component Loaded !")
         self.safety_agent = Safety_Agent()
         print("Safety VLM Component Loaded !")
