@@ -325,8 +325,8 @@ class SAM_TOOL:
         img_array, mask_3d = apply_green_overlay(img_array, cleaned_mask, alpha)
         # 绘制红色边缘轮廓
         boundary_img = draw_mask_boundary(image, cleaned_mask, color=[255, 0, 0], thickness=10)
-        
-        return img_array, center_crop_mask_region(boundary_img, cleaned_mask, crop_size=self.crop_size)
+
+        return img_array, boundary_img, center_crop_mask_region(boundary_img, cleaned_mask, crop_size=self.crop_size)
 
     # 核心检测 - 注意异步！
     async def detect(self, image, points:gr.SelectData):
@@ -351,10 +351,12 @@ class SAM_TOOL:
         #yield loading_image, f"正在应用mask叠加...\n当前点击坐标: ({x}, {y})"
         #await asyncio.sleep(1)
         
-        img_array, boundary = self.apply_mask_overlay(img_array, mask, x, y)
+        img_array, boundary, boundary_cropped = self.apply_mask_overlay(img_array, mask, x, y)
         
         # save cropped_image to ./sam/tmp/cropped_image.png
-        Image.fromarray(boundary).save("./sam/tmp/cropped_image.png")
+        Image.fromarray(boundary_cropped).save("./sam/tmp/cropped_image.png")
+        # save boundary_img to ./sam/tmp/boundary_img.png
+        Image.fromarray(boundary).save("./sam/tmp/boundary_img.png")
 
         # 绘制标记点
         #yield loading_image, f"正在绘制标记点...\n当前点击坐标: ({x}, {y})"
@@ -369,7 +371,7 @@ class SAM_TOOL:
         
         # 返回最终结果
         # self.masked_img = img_array
-        return img_array, boundary, f"处理完成\n当前点击坐标: ({x}, {y})"
+        return img_array, boundary_cropped, f"处理完成\n当前点击坐标: ({x}, {y})"
 
     #async def detect_tool(self, image, points:gr.SelectData):
     #    _, boundary, _ = self.detect(image, points)

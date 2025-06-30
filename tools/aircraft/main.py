@@ -13,7 +13,7 @@ from safety_check.safty_mcp import Safety_VLM_Local
 class Gradio_Interface():
     def __init__(self, share=True, server_name="127.0.0.1", server_port=7863):
         # TEST VARS
-        self.img_path = "./test.png"
+        self.img_path = "./msfs2024_ctrl/screenshots/current_view.png"
 
         # True Vars
         self.share = share
@@ -38,6 +38,10 @@ class Gradio_Interface():
             gr.Markdown("**外部进程重新加载**: 创建文件 `reload_trigger.txt` 可触发重新加载")
             # 获取初始图片
             self.current_image = self.sam_tool.load_frame(self.img_path)
+            
+            # 添加定时器组件
+            timer = gr.Timer(value=2.0)  # 每5秒触发一次
+            
             with gr.Row():
                 with gr.Column():
                     self.image_display = gr.Image(
@@ -62,6 +66,8 @@ class Gradio_Interface():
                     # VLM 按钮
                     self.safety_vlm_btn = gr.Button("SafetyVLM分析")
                     self.brain_vlm_btn = gr.Button("BrainVLM控制")
+                    # 添加自动更新开关
+                    self.auto_update_checkbox = gr.Checkbox(label="启用自动更新", value=True)
                 
                 with gr.Column():
                     # 图片显示组件 1, 2
@@ -91,6 +97,13 @@ class Gradio_Interface():
                 outputs=[self.image_display]
             )
             
+            # 定时器事件绑定 - 只有在启用自动更新时才更新图片
+            timer.tick(
+                fn=self.auto_update_image,
+                inputs=[self.auto_update_checkbox],
+                outputs=[self.image_display]
+            )
+            
             self.safety_vlm_btn.click(
                 fn=Safety_VLM_Local,
                 inputs=None,
@@ -98,6 +111,14 @@ class Gradio_Interface():
             )
 
         self.interface = interface
+
+    def auto_update_image(self, auto_update_enabled):
+        """自动更新图片的函数"""
+        if auto_update_enabled:
+            return self.sam_tool.load_frame(self.img_path)
+        else:
+            # 如果自动更新被禁用，返回当前图片（不更新界面）
+            return gr.update()
 
     def launch(self):
         self.interface.queue().launch(share=self.share, server_name=self.server_name, server_port=self.server_port)

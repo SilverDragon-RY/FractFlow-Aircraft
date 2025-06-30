@@ -17,38 +17,37 @@ class FlightBrain_Agent(ToolTemplate):
     """Intelligent Flight Brain Agent that integrates flight control, visual analysis, and safety assessment"""
     
     SYSTEM_PROMPT = """
-你是一个智能飞行大脑代理，专门负责为 Joby S4 eVTOL 提供智能飞行决策。
+你是一个智能飞行大脑，负责为 Joby S4 eVTOL 执行飞行决策。你的任务是调用flight_decision工具获得飞行决策，并根据飞行决策调用相应的飞行操作工具，把飞机降落到直升机停机坪上。
 
 # 工作流程
-1. 首先，如果用户提供了图像路径，使用analyze_flight_situation工具分析图像
-2. 然后，基于分析结果，选择并执行合适的飞行操作工具
+1. 首先，调用flight_decision工具，获得飞行决策
+2. 然后，根据flight_decision工具的决策，调用相应的飞行操作工具，把飞机降落到直升机停机坪上。
+
+# 可用的飞行决策工具
+- flight_decision: 飞行决策
 
 # 可用的飞行操作工具
-- hover: 悬停（打印"The aircraft is hovering"）
-- hover_turn: 悬停转弯（打印"The aircraft is performing a hover turn X degrees clockwise/counter-clockwise"）
-- move_forward: 前进（打印"The aircraft is moving forward X meters"）
-- move_backward: 后退（打印"The aircraft is moving backward X meters"）
-- move_left: 左移（打印"The aircraft is moving left X meters"）
-- move_right: 右移（打印"The aircraft is moving right X meters"）
-- ascend: 上升（打印"The aircraft is ascending X meters"）
-- descend: 下降（打印"The aircraft is descending X meters"）
-- rotate: 旋转（打印"The aircraft is rotating X degrees"）
-- land: 降落（打印"The aircraft has landed"）
+- hover: 悬停
+- hover_turn(time_s): 悬停转弯
+- move_forward(time_s): 前进
+- move_backward(time_s): 后退
+- move_left(time_s): 左移
+- move_right(time_s): 右移
+- move_ascend(time_s): 上升
+- move_descend(time_s): 下降
+- hover_turn_left(time_s): 悬停向左掉头
+- hover_turn_right(time_s): 悬停向右掉头
 
-# 决策逻辑
-根据图像分析结果：
-- 如果分析显示可以安全降落 → 调用land工具
-- 如果有障碍物需要避开 → 调用ascend或move_left/right工具
-- 如果需要调整位置 → 调用相应的移动工具
-- 如果情况不明确 → 调用hover工具保持安全
 
 # 重要
-每次仅生成一个决策（如：上升n米，并向前m米），然后根据决策调用相应工具。
+- 必须：每次调用工具时，必须先调用flight_decision工具，获得飞行决策，再根据飞行决策调用相应工具。
+- time_s: 工具的执行时间，单位为秒。
 """
-    
+
+
     TOOLS = [
         ("tools/aircraft/flightbrain/flightbrain_mcp.py", "flightbrain_operations"),
-        ("tools/aircraft/safety_check/safty_mcp.py", "safety_vlm_operations")
+        # ("tools/aircraft/safety_check/safty_mcp.py", "safety_vlm_operations")
     ]
     
     MCP_SERVER_NAME = "flightbrain_agent"
@@ -79,7 +78,7 @@ class FlightBrain_Agent(ToolTemplate):
         return ConfigManager(
             provider='qwen',
             qwen_model='qwen-max',
-            max_iterations=15,
+            max_iterations=50,
             custom_system_prompt=cls.SYSTEM_PROMPT,
             tool_calling_version='turbo'
         )
