@@ -61,22 +61,24 @@ def parse_result(text: str):
     else:
         result["complete"] = 1
     for i in range(content+6, len(text)):
-        if text[i] == "\n" or text[i] == "#":
+        if text[i] == "-" or text[i] == "#":
             break
         if text[i] != "：" and text[i] != ":":
             result["landing_spot_type"] += text[i]
+    result["landing_spot_type"] = result["landing_spot_type"][:-2]
     for i in range(level+4, len(text)):
-        if text[i] == "\n" or text[i] == "#":
+        if text[i] == "-" or text[i] == "#":
             break
         if text[i] != "：" and text[i] != ":":
             result["safety_level"] += text[i]
+    result["safety_level"] = result["safety_level"][:-2]
     for i in range(reasoning+4, len(text)):
-        if text[i] == "\n" or text[i] == "#":
+        if text[i] == "-" or text[i] == "#":
             break
         if text[i] != "：" and text[i] != ":":
             result["safety_reasoning"] += text[i]
+    result["safety_reasoning"] = result["safety_reasoning"][:-2]
     return result
-    
 
 
 @mcp.tool()
