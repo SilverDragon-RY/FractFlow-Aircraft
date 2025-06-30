@@ -13,7 +13,7 @@ from safety_check.safty_mcp import Safety_VLM_Local
 class Gradio_Interface():
     def __init__(self, share=True, server_name="127.0.0.1", server_port=7863):
         # TEST VARS
-        self.img_path = "./msfs2024_ctrl/screenshots/current_view.png"
+        self.img_path = "./sam/tmp/camera/Test1.png"
 
         # True Vars
         self.share = share

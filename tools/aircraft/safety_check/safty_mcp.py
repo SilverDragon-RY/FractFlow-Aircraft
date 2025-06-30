@@ -61,17 +61,17 @@ def parse_result(text: str):
     else:
         result["complete"] = 1
     for i in range(content+6, len(text)):
-        if text[i] == "\n":
+        if text[i] == "\n" or text[i] == "#":
             break
         if text[i] != "：" and text[i] != ":":
             result["landing_spot_type"] += text[i]
     for i in range(level+4, len(text)):
-        if text[i] == "\n":
+        if text[i] == "\n" or text[i] == "#":
             break
         if text[i] != "：" and text[i] != ":":
             result["safety_level"] += text[i]
     for i in range(reasoning+4, len(text)):
-        if text[i] == "\n":
+        if text[i] == "\n" or text[i] == "#":
             break
         if text[i] != "：" and text[i] != ":":
             result["safety_reasoning"] += text[i]
@@ -112,7 +112,7 @@ async def Safety_VLM_Local() -> str:
 # 输出格式
 - #方框内容识别：[简短描述]
 - #评估结果：[适合降落/谨慎降落/不适合降落]
-- #核心理由：[项目符号列出关键依据]
+- #核心理由：[以序号列出关键依据]
 - #潜在风险与建议：[风险点和建议]
 - #限制声明：“最终的飞行安全始终由操作飞行模拟器的用户（飞行员）负责”
 """
